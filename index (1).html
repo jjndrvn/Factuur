@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Factuur maken</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --green: #d3ddcf;
+      --ink: #111;
+      --line: #222;
+      --page: #edf0ed;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font: 14px Arial, sans-serif;
+    }
+
+    main {
+      width: min(1050px, calc(100% - 32px));
+      margin: 28px auto;
+    }
+
+    h1 { margin: 0 0 6px; }
+    .intro { margin: 0 0 20px; color: #444; }
+
+    .card {
+      background: white;
+      padding: 24px;
+      margin-top: 16px;
+      border: 1px solid #d7d7d7;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 15px 20px;
+    }
+
+    .address-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 2fr;
+      gap: 15px 20px;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #ccc;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    input {
+      width: 100%;
+      margin-top: 5px;
+      padding: 9px;
+      font: inherit;
+      border: 1px solid #aaa;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: var(--green);
+      border: 1px solid var(--line);
+      padding: 7px;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    td {
+      border: 1px solid #bbb;
+      padding: 5px;
+    }
+
+    td input {
+      margin: 0;
+      padding: 6px;
+      border: 0;
+    }
+
+    .qty { width: 74px; }
+    .price { width: 120px; }
+
+    .calculated {
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .remove {
+      border: 0;
+      background: transparent;
+      font-size: 19px;
+      cursor: pointer;
+      color: #a00;
+    }
+
+    .add,
+    .primary,
+    .secondary {
+      padding: 10px 15px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: bold;
+    }
+
+    .add {
+      margin-top: 12px;
+      background: var(--green);
+      border: 1px solid var(--line);
+    }
+
+    .primary {
+      color: #111;
+      background: var(--green);
+      border: 1px solid var(--line);
+    }
+
+    .secondary {
+      background: white;
+      border: 1px solid #777;
+    }
+
+    .summary {
+      max-width: 370px;
+      margin: 22px 0 0 auto;
+      border: 1px solid var(--line);
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid #bbb;
+    }
+
+    .summary-row:last-child {
+      border-bottom: 0;
+      font-size: 17px;
+      font-weight: bold;
+      background: var(--green);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+
+    #status { color: #444; }
+
+    @media (max-width: 720px) {
+      .grid, .address-grid { grid-template-columns: 1fr; }
+      main { width: calc(100% - 20px); }
+      th:nth-child(4), td:nth-child(4),
+      th:nth-child(5), td:nth-child(5),
+      th:nth-child(6), td:nth-child(6) { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Factuur maken</h1>
+    <p class="intro">Vul de gegevens in en download de factuur als PDF.</p>
+
+    <section class="card">
+      <div class="grid">
+        <label>
+          Factuurnummer
+          <input id="invoiceNumber" required>
+        </label>
+
+        <label>
+          Factuurdatum
+          <input id="invoiceDate" type="date" required>
+        </label>
+
+        <label>
+          Klantnummer
+          <input id="customerNumber">
+        </label>
+      </div>
+
+      <div class="address-grid">
+        <label>
+          Bedrijfsnaam
+          <input id="companyName" required>
+        </label>
+
+        <label>
+          Postcode
+          <input id="postcode">
+        </label>
+
+        <label>
+          Huisnummer
+          <input id="houseNumber">
+        </label>
+
+        <label>
+          Straatnaam
+          <input id="streetName">
+        </label>
+
+        <label>
+          Plaatsnaam
+          <input id="cityName">
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Factuurregels</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Aantal</th>
+            <th>Omschrijving</th>
+            <th>Stukprijs</th>
+            <th>% BTW</th>
+            <th>Prijs excl.</th>
+            <th>Prijs incl.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="items"></tbody>
+      </table>
+
+      <button class="add" type="button" onclick="addItem()">+ Regel toevoegen</button>
+
+      <div class="summary">
+        <div class="summary-row">
+          <span>Bedrag excl.</span>
+          <strong id="subtotal">€ 0,00</strong>
+        </div>
+        <div class="summary-row">
+          <span>Bedrag BTW (21%)</span>
+          <strong id="vat">€ 0,00</strong>
+        </div>
+        <div class="summary-row">
+          <span>Bedrag incl.</span>
+          <span id="total">€ 0,00</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" type="button" onclick="downloadPdf()">PDF downloaden</button>
+        <button class="secondary" type="button" onclick="loadInvoice()">Eerdere factuur openen</button>
+        <span id="status"></span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+
+    // ==========================================
+    // GOOGLE APPS SCRIPT API
+    // ==========================================
+    //
+    // VUL HIER DE URL IN DIE JE KRIJGT NA:
+    // Apps Script -> Deploy -> New deployment -> Web app
+    //
+    const API_URL =
+      'https://script.google.com/macros/s/AKfycbyoHbhG7t6NkAQAB8FND5CXFHT5BIGvvCr8Mr794F4b7z68p2X0fAcNBARa6g5emQtf/exec';
+
+
+    // ==========================================
+    // API GET (JSONP)
+    // ==========================================
+
+    function apiGet(action, params = {}) {
+
+      return new Promise((resolve, reject) => {
+
+        const callbackName =
+          'apiCallback_' +
+          Date.now() +
+          '_' +
+          Math.floor(Math.random() * 100000);
+
+        const script =
+          document.createElement('script');
+
+        const query =
+          new URLSearchParams({
+            action,
+            callback: callbackName,
+            ...params
+          });
+
+        const timeout =
+          setTimeout(() => {
+
+            cleanup();
+
+            reject(
+              new Error(
+                'De API reageert niet.'
+              )
+            );
+
+          }, 15000);
+
+
+        window[callbackName] =
+          function(response) {
+
+            clearTimeout(timeout);
+
+            cleanup();
+
+            if (
+              !response ||
+              response.success === false
+            ) {
+
+              reject(
+                new Error(
+                  response?.error ||
+                  'Onbekende API-fout.'
+                )
+              );
+
+              return;
+            }
+
+            resolve(response.data);
+
+          };
+
+
+        script.onerror =
+          function() {
+
+            clearTimeout(timeout);
+
+            cleanup();
+
+            reject(
+              new Error(
+                'Kan geen verbinding maken met de API.'
+              )
+            );
+
+          };
+
+
+        script.src =
+          API_URL +
+          '?' +
+          query.toString();
+
+        document.body.appendChild(script);
+
+
+        function cleanup() {
+
+          delete window[callbackName];
+
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+
+        }
+
+      });
+
+    }
+
+
+    // ==========================================
+    // FACTUUR OPSLAAN VIA API
+    // ==========================================
+
+    function apiSaveInvoice(invoice) {
+
+      return new Promise((resolve, reject) => {
+
+        const iframeName =
+          'apiSaveFrame_' + Date.now();
+
+        const iframe =
+          document.createElement('iframe');
+
+        iframe.name = iframeName;
+        iframe.style.display = 'none';
+
+        document.body.appendChild(iframe);
+
+
+        const form =
+          document.createElement('form');
+
+        form.method = 'POST';
+        form.action = API_URL;
+        form.target = iframeName;
+
+        form.style.display = 'none';
+
+
+        const actionInput =
+          document.createElement('input');
+
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'saveInvoice';
+
+
+        const invoiceInput =
+          document.createElement('input');
+
+        invoiceInput.type = 'hidden';
+        invoiceInput.name = 'invoice';
+        invoiceInput.value =
+          JSON.stringify(invoice);
+
+
+        form.appendChild(actionInput);
+        form.appendChild(invoiceInput);
+
+        document.body.appendChild(form);
+
+
+        let finished = false;
+
+        const finish = async () => {
+
+          if (finished) return;
+          finished = true;
+
+          form.remove();
+          iframe.remove();
+
+          try {
+
+            // Controleer via GET of de factuur werkelijk
+            // in het Google Sheet-archief staat.
+            const saved =
+              await apiGet(
+                'invoice',
+                {
+                  invoiceNumber:
+                    invoice.invoiceNumber
+                }
+              );
+
+            if (!saved) {
+
+              reject(
+                new Error(
+                  'De factuur kon niet in het archief worden gevonden.'
+                )
+              );
+
+              return;
+            }
+
+            resolve({
+              saved: true,
+              message:
+                'Factuur is opgeslagen in het archief.'
+            });
+
+          } catch (error) {
+
+            reject(error);
+
+          }
+
+        };
+
+
+        iframe.addEventListener(
+          'load',
+          finish,
+          { once: true }
+        );
+
+
+        // Fallback voor browsers die de iframe-load
+        // niet betrouwbaar afhandelen.
+        setTimeout(finish, 2500);
+
+
+        form.submit();
+
+      });
+
+    }
+
+    const fieldIds = [
+      'invoiceNumber',
+      'invoiceDate',
+      'customerNumber',
+      'companyName',
+      'postcode',
+      'houseNumber',
+      'streetName',
+      'cityName'
+    ];
+
+    // Vervang deze gegevens door jouw eigen vaste gegevens.
+    const footer = {
+      payment:
+        'NL Betalingsvoorwaarde: Binnen 14 dagen. Bij betaling s.v.p. klant en factuur nr. vermelden.',
+      bank:
+        'Rabobank Hardinxveld-Giessendam Rek.nr. NL12 RABO 03250.24529',
+      registration:
+        'KvK: Rotterdam nr.23034166 BTW nr. NL001140803B05',
+      terms: [
+        'Op al onze offertes, op alle opdrachten aan ons en op alle met ons gesloten overeenkomsten zijn de METAALUNIEVOORWAARDEN van toepassing,',
+        'zoals deze luiden volgens de op de achterzijde afgedrukte tekst.',
+        'De leveringsvoorwaarden worden u, indien gewenst, tevens kosteloos toegezonden.'
+      ]
+    };
+
+    function money(number) {
+      return Number(number || 0).toLocaleString('nl-NL', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function euro(number) {
+      return '€ ' + money(number);
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[character]));
+    }
+
+    function addItem(item = {}) {
+      const row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td>
+          <input class="qty" type="number" min="0" step="1"
+            value="${item.quantity || 1}" oninput="updateTotals()">
+        </td>
+        <td>
+          <input class="description" value="${escapeHtml(item.description)}">
+        </td>
+        <td>
+          <input class="price" type="number" min="0" step="0.01"
+            value="${item.price || ''}" oninput="updateTotals()">
+        </td>
+        <td>21,00%</td>
+        <td class="calculated line-excl">€ 0,00</td>
+        <td class="calculated line-incl">€ 0,00</td>
+        <td>
+          <button class="remove" type="button" title="Regel verwijderen"
+            onclick="this.closest('tr').remove(); updateTotals()">×</button>
+        </td>
+      `;
+
+      document.getElementById('items').appendChild(row);
+      updateTotals();
+    }
+
+    function items() {
+      return [...document.querySelectorAll('#items tr')]
+        .map(row => ({
+          quantity: Number(row.querySelector('.qty').value) || 0,
+          description: row.querySelector('.description').value.trim(),
+          price: Number(row.querySelector('.price').value) || 0
+        }))
+        .filter(item => item.description || item.price);
+    }
+
+    function updateTotals() {
+      document.querySelectorAll('#items tr').forEach(row => {
+        const quantity = Number(row.querySelector('.qty').value) || 0;
+        const price = Number(row.querySelector('.price').value) || 0;
+        const exclusive = quantity * price;
+
+        row.querySelector('.line-excl').textContent = euro(exclusive);
+        row.querySelector('.line-incl').textContent = euro(exclusive * 1.21);
+      });
+
+      const subtotal = items().reduce(
+        (sum, item) => sum + item.quantity * item.price,
+        0
+      );
+
+      const vat = subtotal * 0.21;
+
+      document.getElementById('subtotal').textContent = euro(subtotal);
+      document.getElementById('vat').textContent = euro(vat);
+      document.getElementById('total').textContent = euro(subtotal + vat);
+    }
+
+    function invoiceData() {
+      const data = { items: items() };
+
+      fieldIds.forEach(id => {
+        data[id] = document.getElementById(id).value.trim();
+      });
+
+      return data;
+    }
+
+    function applyInvoice(data) {
+      fieldIds.forEach(id => {
+        document.getElementById(id).value = data[id] || '';
+      });
+
+      document.getElementById('items').innerHTML = '';
+
+      if (data.items && data.items.length) {
+        data.items.forEach(addItem);
+      } else {
+        addItem();
+      }
+
+      updateTotals();
+    }
+
+    function setStatus(message) {
+      document.getElementById('status').textContent = message;
+    }
+
+    function showError(error) {
+      setStatus('Er ging iets mis: ' + (error.message || error));
+    }
+
+    async function loadInvoice() {
+
+      const number =
+        prompt(
+          'Welk factuurnummer wil je openen?'
+        );
+
+      if (!number) return;
+
+      setStatus(
+        'Factuur wordt opgehaald…'
+      );
+
+      try {
+
+        const data =
+          await apiGet(
+            'invoice',
+            {
+              invoiceNumber: number
+            }
+          );
+
+        if (!data) {
+
+          setStatus(
+            'Factuur niet gevonden.'
+          );
+
+          return;
+        }
+
+        applyInvoice(data);
+
+        setStatus(
+          'Factuur geopend.'
+        );
+
+      } catch (error) {
+
+        showError(error);
+
+      }
+
+    }
+
+    async function downloadPdf() {
+
+      const data = invoiceData();
+
+      if (!data.companyName) {
+
+        alert(
+          'Vul minimaal de bedrijfsnaam in.'
+        );
+
+        return;
+      }
+
+      if (!data.invoiceDate) {
+
+        alert(
+          'Vul een factuurdatum in.'
+        );
+
+        return;
+      }
+
+      setStatus(
+        'Factuur wordt opgeslagen…'
+      );
+
+      try {
+
+        const result =
+          await apiSaveInvoice(data);
+
+        if (
+          result &&
+          result.saved === false
+        ) {
+
+          setStatus(
+            result.message ||
+            'Factuur bestaat al.'
+          );
+
+          return;
+        }
+
+        createPdf(data);
+
+        setStatus(
+          'PDF gedownload en factuur opgeslagen.'
+        );
+
+      } catch (error) {
+
+        showError(error);
+
+      }
+
+    }
+
+    function createPdf(data) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const green = [211, 221, 207];
+      const left = 18;
+      const right = 202;
+
+      const date = new Date(data.invoiceDate + 'T12:00:00');
+      const paymentDate = new Date(date);
+      paymentDate.setDate(paymentDate.getDate() + 14);
+
+      const dateText = date.toLocaleDateString('nl-NL');
+      const paymentText = paymentDate.toLocaleDateString('nl-NL');
+
+      const subtotal = data.items.reduce(
+        (sum, item) => sum + item.quantity * item.price,
+        0
+      );
+
+      const vat = subtotal * 0.21;
+      const total = subtotal + vat;
+
+      const address = [
+        data.companyName,
+        `${data.streetName} ${data.houseNumber}`.trim(),
+        `${data.postcode} ${data.cityName}`.trim()
+      ].filter(Boolean);
+
+      // Kop
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text(address, left, 28);
+
+      doc.setFontSize(9);
+      doc.text(
+        `FACTUUR ${data.invoiceNumber} van ${dateText}`,
+        left,
+        59
+      );
+      doc.text('Pagina : 1', 157, 59);
+
+      doc.setFontSize(8);
+      doc.text(`Klantnummer ${data.customerNumber || ''}`, left, 65);
+
+      // Factuurregels
+      const columns = [18, 42, 108, 132, 155, 178, 202];
+      const top = 71;
+      const headerBottom = 76;
+      const tableBottom = 187;
+
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.25);
+      doc.rect(left, top, right - left, tableBottom - top);
+
+      doc.setFillColor(...green);
+      doc.rect(left, top, right - left, 5, 'F');
+
+      columns.slice(1, -1).forEach(x => {
+        doc.line(x, top, x, tableBottom);
+      });
+
+      doc.line(left, headerBottom, right, headerBottom);
+
+      const headers = [
+        'Aantal',
+        'Omschrijving',
+        'Stukprijs',
+        '% BTW',
+        'Prijs excl.',
+        'Prijs incl.'
+      ];
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+
+      headers.forEach((header, index) => {
+        doc.text(
+          header,
+          (columns[index] + columns[index + 1]) / 2,
+          74,
+          { align: 'center' }
+        );
+      });
+
+      doc.setFont('helvetica', 'normal');
+
+      data.items.slice(0, 16).forEach((item, index) => {
+        const y = 80 + index * 5;
+        const lineTotal = item.quantity * item.price;
+
+        doc.text(String(item.quantity), 32, y, { align: 'right' });
+        doc.text(item.description, 43, y);
+        doc.text(money(item.price), 130, y, { align: 'right' });
+        doc.text('21,00%', 153, y, { align: 'right' });
+        doc.text(money(lineTotal), 176, y, { align: 'right' });
+        doc.text(money(lineTotal * 1.21), 200, y, { align: 'right' });
+      });
+
+      // Totalen
+      const totalsTop = 192;
+
+      doc.setFillColor(...green);
+      doc.rect(left, totalsTop, right - left, 5, 'F');
+      doc.rect(left, totalsTop, right - left, 10);
+
+      [64, 88, 112, 134, 155].forEach(x => {
+        doc.line(x, totalsTop, x, totalsTop + 10);
+      });
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+
+      doc.text('Bedrag excl.', 19, 195);
+      doc.text('BTW %', 65, 195);
+      doc.text('Bedrag BTW', 89, 195);
+      doc.text('Bedrag incl.', 156, 195);
+
+      doc.setFontSize(8);
+      doc.text(money(subtotal), 63, 201, { align: 'right' });
+      doc.text('21,00%', 87, 201, { align: 'right' });
+      doc.text(money(vat), 111, 201, { align: 'right' });
+      doc.text(money(total), 201, 201, { align: 'right' });
+
+      // Betaalblok
+      const paymentTop = 207;
+
+      doc.rect(88, paymentTop, 114, 6);
+      doc.line(178, paymentTop, 178, paymentTop + 6);
+
+      doc.setFontSize(7);
+      doc.text(`Te betalen voor ${paymentText} :`, 90, 211);
+      doc.text(money(total), 201, 211, { align: 'right' });
+
+      // Footer
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.4);
+
+      doc.text(footer.payment, left, 226);
+      doc.text(footer.bank, left, 233);
+      doc.text(footer.registration, left, 240);
+      doc.text(footer.terms, left, 248);
+
+      doc.save(`Factuur ${data.invoiceNumber}.pdf`);
+    }
+
+    (async function init() {
+
+      try {
+
+        const data =
+          await apiGet('initial');
+
+        applyInvoice(data);
+
+      } catch (error) {
+
+        showError(error);
+
+      }
+
+    })();
+  </script>
+</body>
+</html>
