@@ -164,6 +164,15 @@
 
     #status { color: #444; }
 
+    #app { display: none; }
+
+    #login {
+      width: min(420px, calc(100% - 32px));
+      margin: 100px auto;
+    }
+
+    #loginError { color: #a00; min-height: 1.2em; }
+
     @media (max-width: 720px) {
       .grid, .address-grid { grid-template-columns: 1fr; }
       main { width: calc(100% - 20px); }
@@ -175,7 +184,22 @@
 </head>
 
 <body>
-  <main>
+  <main id="login">
+    <section class="card">
+      <h1>Inloggen</h1>
+      <p class="intro">Voer het wachtwoord in om facturen te openen of op te slaan.</p>
+      <label>
+        Wachtwoord
+        <input id="password" type="password" autocomplete="current-password">
+      </label>
+      <div class="actions">
+        <button class="primary" type="button" onclick="login()">Inloggen</button>
+        <span id="loginError"></span>
+      </div>
+    </section>
+  </main>
+
+  <main id="app">
     <h1>Factuur maken</h1>
     <p class="intro">Vul de gegevens in en download de factuur als PDF.</p>
 
@@ -278,7 +302,19 @@
     // Apps Script -> Deploy -> New deployment -> Web app
     //
     const API_URL =
-      'https://script.google.com/macros/s/AKfycbyoHbhG7t6NkAQAB8FND5CXFHT5BIGvvCr8Mr794F4b7z68p2X0fAcNBARa6g5emQtf/exec';
+      'https://script.google.com/macros/s/AKfycbxOVM0f8jRzDCAQZaRIko5aIqtXYkkuKDKX7mQBx4ngv7EH9EZFEmb_IZAcSQ57fOhx/exec';
+
+    // Bewust lokaal opgeslagen voor eigen gebruik. Dit is geen beveiliging
+    // tegen iemand die toegang heeft tot deze browser of dit HTML-bestand.
+    const PASSWORD_STORAGE_KEY = 'factuurApiPassword';
+
+    function getPassword() {
+      return localStorage.getItem(PASSWORD_STORAGE_KEY) || '';
+    }
+
+    function clearPassword() {
+      localStorage.removeItem(PASSWORD_STORAGE_KEY);
+    }
 
 
     // ==========================================
@@ -302,6 +338,7 @@
           new URLSearchParams({
             action,
             callback: callbackName,
+            password: getPassword(),
             ...params
           });
 
@@ -422,6 +459,13 @@
         actionInput.name = 'action';
         actionInput.value = 'saveInvoice';
 
+        const passwordInput =
+          document.createElement('input');
+
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password';
+        passwordInput.value = getPassword();
+
 
         const invoiceInput =
           document.createElement('input');
@@ -433,6 +477,7 @@
 
 
         form.appendChild(actionInput);
+        form.appendChild(passwordInput);
         form.appendChild(invoiceInput);
 
         document.body.appendChild(form);
@@ -643,7 +688,46 @@
     }
 
     function showError(error) {
+      if ((error.message || String(error)).includes('Niet geautoriseerd')) {
+        clearPassword();
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('login').style.display = 'block';
+      }
       setStatus('Er ging iets mis: ' + (error.message || error));
+    }
+
+    async function login() {
+      const password = document.getElementById('password').value;
+      const loginError = document.getElementById('loginError');
+
+      loginError.textContent = '';
+
+      if (!password) {
+        loginError.textContent = 'Vul een wachtwoord in.';
+        return;
+      }
+
+      try {
+        // Verstuur het wachtwoord alleen ter controle; sla het pas op na succes.
+        await apiGet('authenticate', { password });
+        localStorage.setItem(PASSWORD_STORAGE_KEY, password);
+        document.getElementById('password').value = '';
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        await loadInitialData();
+      } catch (error) {
+        clearPassword();
+        loginError.textContent = error.message || 'Inloggen mislukt.';
+      }
+    }
+
+    async function loadInitialData() {
+      try {
+        const data = await apiGet('initial');
+        applyInvoice(data);
+      } catch (error) {
+        showError(error);
+      }
     }
 
     async function loadInvoice() {
@@ -901,19 +985,17 @@
     }
 
     (async function init() {
+      const savedPassword = getPassword();
 
-      try {
+      document.getElementById('password').addEventListener('keydown', event => {
+        if (event.key === 'Enter') login();
+      });
 
-        const data =
-          await apiGet('initial');
+      if (!savedPassword) return;
 
-        applyInvoice(data);
-
-      } catch (error) {
-
-        showError(error);
-
-      }
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      await loadInitialData();
 
     })();
   </script>
