@@ -166,6 +166,64 @@
 
     #app { display: none; }
 
+    .topbar {
+      display: flex;
+      gap: 10px;
+      margin: 0 0 16px;
+      flex-wrap: wrap;
+    }
+
+    .topbar button {
+      flex: 1;
+      min-width: 220px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: bold;
+      border: 1px solid var(--line);
+      background: white;
+    }
+
+    .topbar button.active {
+      background: var(--green);
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .overview-table th,
+    .overview-table td {
+      padding: 9px 8px;
+      vertical-align: middle;
+    }
+
+    .overview-table .open-button,
+    .overview-table .delete-button {
+      padding: 7px 11px;
+      cursor: pointer;
+      font: inherit;
+      border: 1px solid #777;
+      background: white;
+    }
+
+    .overview-table .delete-button {
+      border-color: #a00;
+      color: #a00;
+    }
+
+    .overview-table .actions-cell {
+      white-space: nowrap;
+    }
+
+    .overview-empty {
+      color: #555;
+      padding: 15px 0;
+    }
+
+    #invoiceList {
+      overflow-x: auto;
+    }
+
     #login {
       width: min(420px, calc(100% - 32px));
       margin: 100px auto;
@@ -200,14 +258,34 @@
   </main>
 
   <main id="app">
-    <h1>Factuur maken</h1>
-    <p class="intro">Vul de gegevens in en download de factuur als PDF.</p>
+    <div class="topbar">
+      <button id="navOverview" type="button" onclick="showView('overview')">
+        Eerdere facturen bekijken/bewerken
+      </button>
+      <button id="navNew" type="button" class="active" onclick="newInvoice()">
+        Nieuw factuur maken
+      </button>
+    </div>
 
-    <section class="card">
+    <section id="overviewView" class="view">
+      <h1>Eerdere facturen</h1>
+      <p class="intro">Bekijk een eerder aangemaakte factuur of open deze om de gegevens te wijzigen.</p>
+
+      <section class="card">
+        <div id="invoiceList">Facturen worden geladen…</div>
+      </section>
+    </section>
+
+    <section id="invoiceView" class="view active">
+      <h1>Factuur maken</h1>
+      <p class="intro">Vul de gegevens in en download de factuur als PDF.</p>
+
+      <section class="card">
       <div class="grid">
         <label>
           Factuurnummer
           <input id="invoiceNumber" required>
+          <input id="invoiceId" type="hidden">
         </label>
 
         <label>
@@ -286,7 +364,7 @@
 
       <div class="actions">
         <button class="primary" type="button" onclick="downloadPdf()">PDF downloaden</button>
-        <button class="secondary" type="button" onclick="loadInvoice()">Eerdere factuur openen</button>
+        <button class="secondary" type="button" onclick="showView('overview')">Eerdere facturen</button>
         <span id="status"></span>
       </div>
     </section>
@@ -302,7 +380,7 @@
     // Apps Script -> Deploy -> New deployment -> Web app
     //
     const API_URL =
-      'https://script.google.com/macros/s/AKfycbxOVM0f8jRzDCAQZaRIko5aIqtXYkkuKDKX7mQBx4ngv7EH9EZFEmb_IZAcSQ57fOhx/exec';
+      'https://script.google.com/macros/s/AKfycbx1SEJqzw21NbaN-TQCXiSSeJYk9gzqEUNYXpZ1n1K3DITb-FqpMGHuR8TIofYyYslf/exec';
 
     // Bewust lokaal opgeslagen voor eigen gebruik. Dit is geen beveiliging
     // tegen iemand die toegang heeft tot deze browser of dit HTML-bestand.
@@ -428,6 +506,16 @@
 
     function apiSaveInvoice(invoice) {
 
+      // Maak het unieke factuur-ID al in de browser aan.
+      // Daardoor kent de HTML hetzelfde ID als Apps Script en kan
+      // de factuur na het opslaan correct worden teruggevonden.
+      if (!invoice.invoiceId) {
+        invoice.invoiceId =
+          (window.crypto && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : 'invoice-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+      }
+
       return new Promise((resolve, reject) => {
 
         const iframeName =
@@ -501,26 +589,26 @@
               await apiGet(
                 'invoice',
                 {
-                  invoiceNumber:
-                    invoice.invoiceNumber
+                  invoiceId:
+                    invoice.invoiceId || ''
                 }
               );
 
             if (!saved) {
-
               reject(
                 new Error(
                   'De factuur kon niet in het archief worden gevonden.'
                 )
               );
-
               return;
             }
 
+            invoice.invoiceId = saved.invoiceId;
+
             resolve({
               saved: true,
-              message:
-                'Factuur is opgeslagen in het archief.'
+              invoiceId: saved.invoiceId,
+              message: 'Factuur is opgeslagen in het archief.'
             });
 
           } catch (error) {
@@ -658,7 +746,10 @@
     }
 
     function invoiceData() {
-      const data = { items: items() };
+      const data = {
+        items: items(),
+        invoiceId: document.getElementById('invoiceId').value.trim()
+      };
 
       fieldIds.forEach(id => {
         data[id] = document.getElementById(id).value.trim();
@@ -671,6 +762,8 @@
       fieldIds.forEach(id => {
         document.getElementById(id).value = data[id] || '';
       });
+
+      document.getElementById('invoiceId').value = data.invoiceId || '';
 
       document.getElementById('items').innerHTML = '';
 
@@ -724,56 +817,266 @@
     async function loadInitialData() {
       try {
         const data = await apiGet('initial');
-        applyInvoice(data);
+
+        applyInvoice({
+          invoiceId: '',
+          invoiceNumber: data.invoiceNumber,
+          invoiceDate: data.invoiceDate,
+          customerNumber: '',
+          companyName: '',
+          postcode: '',
+          houseNumber: '',
+          streetName: '',
+          cityName: '',
+          items: []
+        });
+
+        showView('invoice');
       } catch (error) {
         showError(error);
       }
     }
 
-    async function loadInvoice() {
+    async function loadInvoice(invoiceId) {
+      if (!invoiceId) {
+        showView('overview');
+        return;
+      }
 
-      const number =
-        prompt(
-          'Welk factuurnummer wil je openen?'
-        );
-
-      if (!number) return;
-
-      setStatus(
-        'Factuur wordt opgehaald…'
-      );
+      setStatus('Factuur wordt opgehaald…');
 
       try {
-
-        const data =
-          await apiGet(
-            'invoice',
-            {
-              invoiceNumber: number
-            }
-          );
+        const data = await apiGet('invoice', { invoiceId });
 
         if (!data) {
-
-          setStatus(
-            'Factuur niet gevonden.'
-          );
-
+          setStatus('Factuur niet gevonden.');
           return;
         }
 
         applyInvoice(data);
-
-        setStatus(
-          'Factuur geopend.'
-        );
-
+        showView('invoice');
+        setStatus('Factuur geopend. Je kunt het factuurnummer nu aanpassen.');
       } catch (error) {
-
         showError(error);
+      }
+    }
 
+    function apiDeleteInvoice(invoiceId) {
+      if (!invoiceId) {
+        return Promise.reject(new Error('Geen factuur-ID opgegeven.'));
       }
 
+      return new Promise((resolve, reject) => {
+        const iframeName = 'apiDeleteFrame_' + Date.now();
+
+        const iframe = document.createElement('iframe');
+        iframe.name = iframeName;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = API_URL;
+        form.target = iframeName;
+        form.style.display = 'none';
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'deleteInvoice';
+
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password';
+        passwordInput.value = getPassword();
+
+        const invoiceIdInput = document.createElement('input');
+        invoiceIdInput.type = 'hidden';
+        invoiceIdInput.name = 'invoiceId';
+        invoiceIdInput.value = invoiceId;
+
+        form.appendChild(actionInput);
+        form.appendChild(passwordInput);
+        form.appendChild(invoiceIdInput);
+        document.body.appendChild(form);
+
+        let finished = false;
+
+        const finish = async () => {
+          if (finished) return;
+          finished = true;
+
+          form.remove();
+          iframe.remove();
+
+          try {
+            const remaining = await apiGet('invoice', { invoiceId });
+
+            if (remaining) {
+              reject(new Error('De factuur kon niet worden verwijderd.'));
+              return;
+            }
+
+            resolve({
+              deleted: true,
+              invoiceId: invoiceId,
+              message: 'Factuur is verwijderd.'
+            });
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        iframe.addEventListener('load', finish, { once: true });
+        setTimeout(finish, 2500);
+
+        form.submit();
+      });
+    }
+
+    async function deleteInvoice(invoiceId, invoiceNumber) {
+      if (!invoiceId) {
+        alert('Deze factuur heeft geen uniek ID en kan niet worden verwijderd.');
+        return;
+      }
+
+      const confirmed = confirm(
+        'Weet je zeker dat je factuur ' +
+        (invoiceNumber || '') +
+        ' wilt verwijderen?\n\nDeze actie kan niet ongedaan worden gemaakt.'
+      );
+
+      if (!confirmed) return;
+
+      setStatus('Factuur wordt verwijderd…');
+
+      try {
+        const result = await apiDeleteInvoice(invoiceId);
+
+        if (!result || !result.deleted) {
+          throw new Error(
+            result?.message || 'De factuur kon niet worden verwijderd.'
+          );
+        }
+
+        setStatus('Factuur verwijderd.');
+        await loadInvoiceList();
+      } catch (error) {
+        showError(error);
+      }
+    }
+
+    function showView(view) {
+      const overview = document.getElementById('overviewView');
+      const invoice = document.getElementById('invoiceView');
+      const navOverview = document.getElementById('navOverview');
+      const navNew = document.getElementById('navNew');
+
+      if (view === 'overview') {
+        overview.classList.add('active');
+        invoice.classList.remove('active');
+        navOverview.classList.add('active');
+        navNew.classList.remove('active');
+        loadInvoiceList();
+      } else {
+        overview.classList.remove('active');
+        invoice.classList.add('active');
+        navOverview.classList.remove('active');
+        navNew.classList.add('active');
+      }
+    }
+
+    async function newInvoice() {
+      try {
+        setStatus('Nieuw factuurnummer wordt opgehaald…');
+        const data = await apiGet('initial');
+        applyInvoice({
+          invoiceId: '',
+          invoiceNumber: data.invoiceNumber,
+          invoiceDate: data.invoiceDate,
+          customerNumber: '',
+          companyName: '',
+          postcode: '',
+          houseNumber: '',
+          streetName: '',
+          cityName: '',
+          items: []
+        });
+        showView('invoice');
+        setStatus('');
+      } catch (error) {
+        showError(error);
+      }
+    }
+
+    async function loadInvoiceList() {
+      const container = document.getElementById('invoiceList');
+      container.textContent = 'Facturen worden geladen…';
+
+      try {
+        const invoices = await apiGet('invoices');
+
+        if (!invoices || !invoices.length) {
+          container.innerHTML = '<div class="overview-empty">Er zijn nog geen facturen opgeslagen.</div>';
+          return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'overview-table';
+
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Factuurnummer</th>
+              <th>Factuurdatum</th>
+              <th>Klantnummer</th>
+              <th>Bedrijfsnaam</th>
+              <th>Bedrag incl.</th>
+              <th>Actie</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        `;
+
+        const tbody = table.querySelector('tbody');
+
+        invoices.forEach(invoice => {
+          const row = document.createElement('tr');
+
+          const dateText = invoice.invoiceDate
+            ? new Date(invoice.invoiceDate + 'T12:00:00').toLocaleDateString('nl-NL')
+            : '';
+
+          row.innerHTML = `
+            <td>${escapeHtml(invoice.invoiceNumber)}</td>
+            <td>${escapeHtml(dateText)}</td>
+            <td>${escapeHtml(invoice.customerNumber)}</td>
+            <td>${escapeHtml(invoice.companyName)}</td>
+            <td>${escapeHtml(euro(invoice.total))}</td>
+            <td class="actions-cell">
+              <button class="open-button" type="button">Bekijken / bewerken</button>
+              <button class="delete-button" type="button">Verwijderen</button>
+            </td>
+          `;
+
+          row.querySelector('.open-button').addEventListener('click', () => {
+            loadInvoice(invoice.invoiceId);
+          });
+
+          row.querySelector('.delete-button').addEventListener('click', () => {
+            deleteInvoice(invoice.invoiceId, invoice.invoiceNumber);
+          });
+
+          tbody.appendChild(row);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(table);
+
+      } catch (error) {
+        container.textContent = 'Er ging iets mis bij het ophalen van de facturen.';
+        showError(error);
+      }
     }
 
     async function downloadPdf() {
@@ -807,18 +1110,15 @@
         const result =
           await apiSaveInvoice(data);
 
-        if (
-          result &&
-          result.saved === false
-        ) {
-
-          setStatus(
-            result.message ||
-            'Factuur bestaat al.'
+        if (!result || !result.saved) {
+          throw new Error(
+            result?.message || 'De factuur kon niet worden opgeslagen.'
           );
-
-          return;
         }
+
+        // De server geeft bij een nieuwe factuur het unieke ID terug.
+        data.invoiceId = result.invoiceId;
+        document.getElementById('invoiceId').value = result.invoiceId;
 
         createPdf(data);
 
@@ -870,24 +1170,24 @@
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-      doc.text(address, left, 28);
+      doc.text(address, left, 43);
 
       doc.setFontSize(9);
       doc.text(
         `FACTUUR ${data.invoiceNumber} van ${dateText}`,
         left,
-        59
+        74
       );
-      doc.text('Pagina : 1', 157, 59);
+      doc.text('Pagina : 1', 157, 74);
 
       doc.setFontSize(8);
-      doc.text(`Klantnummer ${data.customerNumber || ''}`, left, 65);
+      doc.text(`Klantnummer ${data.customerNumber || ''}`, left, 80);
 
       // Factuurregels
       const columns = [18, 42, 108, 132, 155, 178, 202];
-      const top = 71;
-      const headerBottom = 76;
-      const tableBottom = 187;
+      const top = 86;
+      const headerBottom = 91;
+      const tableBottom = 202;
 
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.25);
@@ -918,7 +1218,7 @@
         doc.text(
           header,
           (columns[index] + columns[index + 1]) / 2,
-          74,
+          89,
           { align: 'center' }
         );
       });
@@ -926,7 +1226,7 @@
       doc.setFont('helvetica', 'normal');
 
       data.items.slice(0, 16).forEach((item, index) => {
-        const y = 80 + index * 5;
+        const y = 95 + index * 5;
         const lineTotal = item.quantity * item.price;
 
         doc.text(String(item.quantity), 32, y, { align: 'right' });
@@ -938,7 +1238,7 @@
       });
 
       // Totalen
-      const totalsTop = 192;
+      const totalsTop = 207;
 
       doc.setFillColor(...green);
       doc.rect(left, totalsTop, right - left, 5, 'F');
@@ -951,35 +1251,35 @@
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7);
 
-      doc.text('Bedrag excl.', 19, 195);
-      doc.text('BTW %', 65, 195);
-      doc.text('Bedrag BTW', 89, 195);
-      doc.text('Bedrag incl.', 156, 195);
+      doc.text('Bedrag excl.', 19, 210);
+      doc.text('BTW %', 65, 210);
+      doc.text('Bedrag BTW', 89, 210);
+      doc.text('Bedrag incl.', 156, 210);
 
       doc.setFontSize(8);
-      doc.text(money(subtotal), 63, 201, { align: 'right' });
-      doc.text('21,00%', 87, 201, { align: 'right' });
-      doc.text(money(vat), 111, 201, { align: 'right' });
-      doc.text(money(total), 201, 201, { align: 'right' });
+      doc.text(money(subtotal), 63, 216, { align: 'right' });
+      doc.text('21,00%', 87, 216, { align: 'right' });
+      doc.text(money(vat), 111, 216, { align: 'right' });
+      doc.text(money(total), 201, 216, { align: 'right' });
 
       // Betaalblok
-      const paymentTop = 207;
+      const paymentTop = 222;
 
       doc.rect(88, paymentTop, 114, 6);
       doc.line(178, paymentTop, 178, paymentTop + 6);
 
       doc.setFontSize(7);
-      doc.text(`Te betalen voor ${paymentText} :`, 90, 211);
-      doc.text(money(total), 201, 211, { align: 'right' });
+      doc.text(`Te betalen voor ${paymentText} :`, 90, 226);
+      doc.text(money(total), 201, 226, { align: 'right' });
 
       // Footer
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.4);
 
-      doc.text(footer.payment, left, 226);
-      doc.text(footer.bank, left, 233);
-      doc.text(footer.registration, left, 240);
-      doc.text(footer.terms, left, 248);
+      doc.text(footer.payment, left, 241);
+      doc.text(footer.bank, left, 248);
+      doc.text(footer.registration, left, 255);
+      doc.text(footer.terms, left, 263);
 
       doc.save(`Factuur ${data.invoiceNumber}.pdf`);
     }
