@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html lang="nl">
 <head>
   <meta charset="utf-8">
@@ -15,7 +16,9 @@
       --page: #edf0ed;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -29,8 +32,14 @@
       margin: 28px auto;
     }
 
-    h1 { margin: 0 0 6px; }
-    .intro { margin: 0 0 20px; color: #444; }
+    h1 {
+      margin: 0 0 6px;
+    }
+
+    .intro {
+      margin: 0 0 20px;
+      color: #444;
+    }
 
     .card {
       background: white;
@@ -92,8 +101,13 @@
       border: 0;
     }
 
-    .qty { width: 74px; }
-    .price { width: 120px; }
+    .qty {
+      width: 74px;
+    }
+
+    .price {
+      width: 120px;
+    }
 
     .calculated {
       white-space: nowrap;
@@ -162,9 +176,13 @@
       margin-top: 22px;
     }
 
-    #status { color: #444; }
+    #status {
+      color: #444;
+    }
 
-    #app { display: none; }
+    #app {
+      display: none;
+    }
 
     .topbar {
       display: flex;
@@ -188,8 +206,13 @@
       background: var(--green);
     }
 
-    .view { display: none; }
-    .view.active { display: block; }
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
 
     .overview-table th,
     .overview-table td {
@@ -229,145 +252,340 @@
       margin: 100px auto;
     }
 
-    #loginError { color: #a00; min-height: 1.2em; }
+    #loginError {
+      color: #a00;
+      min-height: 1.2em;
+    }
 
     @media (max-width: 720px) {
-      .grid, .address-grid { grid-template-columns: 1fr; }
-      main { width: calc(100% - 20px); }
-      th:nth-child(4), td:nth-child(4),
-      th:nth-child(5), td:nth-child(5),
-      th:nth-child(6), td:nth-child(6) { display: none; }
+      .grid,
+      .address-grid {
+        grid-template-columns: 1fr;
+      }
+
+      main {
+        width: calc(100% - 20px);
+      }
+
+      th:nth-child(4),
+      td:nth-child(4),
+      th:nth-child(5),
+      td:nth-child(5),
+      th:nth-child(6),
+      td:nth-child(6) {
+        display: none;
+      }
     }
   </style>
+
 </head>
 
 <body>
+
+  <!-- ==========================================
+       LOGIN
+       ========================================== -->
+
   <main id="login">
     <section class="card">
-      <h1>Inloggen</h1>
-      <p class="intro">Voer het wachtwoord in om facturen te openen of op te slaan.</p>
-      <label>
-        Wachtwoord
-        <input id="password" type="password" autocomplete="current-password">
-      </label>
-      <div class="actions">
-        <button class="primary" type="button" onclick="login()">Inloggen</button>
-        <span id="loginError"></span>
-      </div>
-    </section>
+
+```
+  <h1>Inloggen</h1>
+
+  <p class="intro">
+    Voer het wachtwoord in om facturen te openen of op te slaan.
+  </p>
+
+  <label>
+    Wachtwoord
+    <input
+      id="password"
+      type="password"
+      autocomplete="current-password"
+    >
+  </label>
+
+  <div class="actions">
+
+    <button
+      class="primary"
+      type="button"
+      onclick="login()"
+    >
+      Inloggen
+    </button>
+
+    <span id="loginError"></span>
+
+  </div>
+
+</section>
+```
+
   </main>
 
+  <!-- ==========================================
+       APP
+       ========================================== -->
+
   <main id="app">
-    <div class="topbar">
-      <button id="navOverview" type="button" onclick="showView('overview')">
-        Eerdere facturen bekijken/bewerken
-      </button>
-      <button id="navNew" type="button" class="active" onclick="newInvoice()">
-        Nieuw factuur maken
-      </button>
+
+```
+<div class="topbar">
+
+  <button
+    id="navOverview"
+    type="button"
+    onclick="showView('overview')"
+  >
+    Eerdere facturen bekijken/bewerken
+  </button>
+
+  <button
+    id="navNew"
+    type="button"
+    class="active"
+    onclick="newInvoice()"
+  >
+    Nieuw factuur maken
+  </button>
+
+</div>
+
+
+<!-- ==========================================
+     OVERZICHT
+     ========================================== -->
+
+<section id="overviewView" class="view">
+
+  <h1>Eerdere facturen</h1>
+
+  <p class="intro">
+    Bekijk een eerder aangemaakte factuur of open deze om de gegevens te wijzigen.
+  </p>
+
+  <section class="card">
+
+    <div id="invoiceList">
+      Facturen worden geladen…
     </div>
 
-    <section id="overviewView" class="view">
-      <h1>Eerdere facturen</h1>
-      <p class="intro">Bekijk een eerder aangemaakte factuur of open deze om de gegevens te wijzigen.</p>
+  </section>
 
-      <section class="card">
-        <div id="invoiceList">Facturen worden geladen…</div>
-      </section>
-    </section>
+</section>
 
-    <section id="invoiceView" class="view active">
-      <h1>Factuur maken</h1>
-      <p class="intro">Vul de gegevens in en download de factuur als PDF.</p>
 
-      <section class="card">
-      <div class="grid">
-        <label>
-          Factuurnummer
-          <input id="invoiceNumber" required>
-          <input id="invoiceId" type="hidden">
-        </label>
+<!-- ==========================================
+     FACTUUR
+     ========================================== -->
 
-        <label>
-          Factuurdatum
-          <input id="invoiceDate" type="date" required>
-        </label>
+<section id="invoiceView" class="view active">
 
-        <label>
-          Klantnummer
-          <input id="customerNumber">
-        </label>
+  <h1>Factuur maken</h1>
+
+  <p class="intro">
+    Vul de gegevens in en download of print de factuur.
+  </p>
+
+
+  <!-- FACTUURGEGEVENS -->
+
+  <section class="card">
+
+    <div class="grid">
+
+      <label>
+        Factuurnummer
+
+        <input
+          id="invoiceNumber"
+          required
+        >
+
+        <input
+          id="invoiceId"
+          type="hidden"
+        >
+      </label>
+
+
+      <label>
+        Factuurdatum
+
+        <input
+          id="invoiceDate"
+          type="date"
+          required
+        >
+      </label>
+
+
+      <label>
+        Klantnummer
+
+        <input
+          id="customerNumber"
+        >
+      </label>
+
+    </div>
+
+
+    <div class="address-grid">
+
+      <label>
+        Bedrijfsnaam
+
+        <input
+          id="companyName"
+          required
+        >
+      </label>
+
+
+      <label>
+        Postcode
+
+        <input
+          id="postcode"
+        >
+      </label>
+
+
+      <label>
+        Huisnummer
+
+        <input
+          id="houseNumber"
+        >
+      </label>
+
+
+      <label>
+        Straatnaam
+
+        <input
+          id="streetName"
+        >
+      </label>
+
+
+      <label>
+        Plaatsnaam
+
+        <input
+          id="cityName"
+        >
+      </label>
+
+    </div>
+
+  </section>
+
+
+  <!-- ==========================================
+       FACTUURREGELS
+       ========================================== -->
+
+  <section class="card">
+
+    <h2>Factuurregels</h2>
+
+    <table>
+
+      <thead>
+
+        <tr>
+          <th>Aantal</th>
+          <th>Omschrijving</th>
+          <th>Stukprijs</th>
+          <th>% BTW</th>
+          <th>Prijs excl.</th>
+          <th>Prijs incl.</th>
+          <th></th>
+        </tr>
+
+      </thead>
+
+      <tbody id="items"></tbody>
+
+    </table>
+
+
+    <button
+      class="add"
+      type="button"
+      onclick="addItem()"
+    >
+      + Regel toevoegen
+    </button>
+
+
+    <!-- TOTALEN -->
+
+    <div class="summary">
+
+      <div class="summary-row">
+        <span>Bedrag excl.</span>
+        <strong id="subtotal">€ 0,00</strong>
       </div>
 
-      <div class="address-grid">
-        <label>
-          Bedrijfsnaam
-          <input id="companyName" required>
-        </label>
-
-        <label>
-          Postcode
-          <input id="postcode">
-        </label>
-
-        <label>
-          Huisnummer
-          <input id="houseNumber">
-        </label>
-
-        <label>
-          Straatnaam
-          <input id="streetName">
-        </label>
-
-        <label>
-          Plaatsnaam
-          <input id="cityName">
-        </label>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Factuurregels</h2>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Aantal</th>
-            <th>Omschrijving</th>
-            <th>Stukprijs</th>
-            <th>% BTW</th>
-            <th>Prijs excl.</th>
-            <th>Prijs incl.</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="items"></tbody>
-      </table>
-
-      <button class="add" type="button" onclick="addItem()">+ Regel toevoegen</button>
-
-      <div class="summary">
-        <div class="summary-row">
-          <span>Bedrag excl.</span>
-          <strong id="subtotal">€ 0,00</strong>
-        </div>
-        <div class="summary-row">
-          <span>Bedrag BTW (21%)</span>
-          <strong id="vat">€ 0,00</strong>
-        </div>
-        <div class="summary-row">
-          <span>Bedrag incl.</span>
-          <span id="total">€ 0,00</span>
-        </div>
+      <div class="summary-row">
+        <span>Bedrag BTW (21%)</span>
+        <strong id="vat">€ 0,00</strong>
       </div>
 
-      <div class="actions">
-        <button class="primary" type="button" onclick="downloadPdf()">PDF downloaden</button>
-        <button class="secondary" type="button" onclick="showView('overview')">Eerdere facturen</button>
-        <span id="status"></span>
+      <div class="summary-row">
+        <span>Bedrag incl.</span>
+        <span id="total">€ 0,00</span>
       </div>
-    </section>
+
+    </div>
+
+
+    <!-- ==========================================
+         ACTIEKNOPPEN
+         ========================================== -->
+
+    <div class="actions">
+
+      <button
+        class="primary"
+        type="button"
+        onclick="downloadPdf()"
+      >
+        PDF downloaden
+      </button>
+
+
+      <button
+        class="primary"
+        type="button"
+        onclick="printInvoice()"
+      >
+        Factuur printen
+      </button>
+
+
+      <button
+        class="secondary"
+        type="button"
+        onclick="showView('overview')"
+      >
+        Eerdere facturen
+      </button>
+
+
+      <span id="status"></span>
+
+    </div>
+
+  </section>
+
+</section>
+```
+
   </main>
 
   <script>
@@ -375,23 +593,34 @@
     // ==========================================
     // GOOGLE APPS SCRIPT API
     // ==========================================
-    //
-    // VUL HIER DE URL IN DIE JE KRIJGT NA:
-    // Apps Script -> Deploy -> New deployment -> Web app
-    //
+
     const API_URL =
       'https://script.google.com/macros/s/AKfycbx1SEJqzw21NbaN-TQCXiSSeJYk9gzqEUNYXpZ1n1K3DITb-FqpMGHuR8TIofYyYslf/exec';
 
-    // Bewust lokaal opgeslagen voor eigen gebruik. Dit is geen beveiliging
-    // tegen iemand die toegang heeft tot deze browser of dit HTML-bestand.
-    const PASSWORD_STORAGE_KEY = 'factuurApiPassword';
+
+    // ==========================================
+    // WACHTWOORD
+    // ==========================================
+
+    const PASSWORD_STORAGE_KEY =
+      'factuurApiPassword';
+
 
     function getPassword() {
-      return localStorage.getItem(PASSWORD_STORAGE_KEY) || '';
+
+      return localStorage.getItem(
+        PASSWORD_STORAGE_KEY
+      ) || '';
+
     }
 
+
     function clearPassword() {
-      localStorage.removeItem(PASSWORD_STORAGE_KEY);
+
+      localStorage.removeItem(
+        PASSWORD_STORAGE_KEY
+      );
+
     }
 
 
@@ -409,16 +638,26 @@
           '_' +
           Math.floor(Math.random() * 100000);
 
+
         const script =
           document.createElement('script');
 
+
         const query =
           new URLSearchParams({
+
             action,
-            callback: callbackName,
-            password: getPassword(),
+
+            callback:
+              callbackName,
+
+            password:
+              getPassword(),
+
             ...params
+
           });
+
 
         const timeout =
           setTimeout(() => {
@@ -441,6 +680,7 @@
 
             cleanup();
 
+
             if (
               !response ||
               response.success === false
@@ -454,7 +694,9 @@
               );
 
               return;
+
             }
+
 
             resolve(response.data);
 
@@ -482,15 +724,23 @@
           '?' +
           query.toString();
 
-        document.body.appendChild(script);
+
+        document.body.appendChild(
+          script
+        );
 
 
         function cleanup() {
 
           delete window[callbackName];
 
+
           if (script.parentNode) {
-            script.parentNode.removeChild(script);
+
+            script.parentNode.removeChild(
+              script
+            );
+
           }
 
         }
@@ -501,144 +751,235 @@
 
 
     // ==========================================
-    // FACTUUR OPSLAAN VIA API
+    // FACTUUR OPSLAAN
     // ==========================================
 
     function apiSaveInvoice(invoice) {
 
-      // Maak het unieke factuur-ID al in de browser aan.
-      // Daardoor kent de HTML hetzelfde ID als Apps Script en kan
-      // de factuur na het opslaan correct worden teruggevonden.
       if (!invoice.invoiceId) {
+
         invoice.invoiceId =
-          (window.crypto && crypto.randomUUID)
+          (
+            window.crypto &&
+            crypto.randomUUID
+          )
             ? crypto.randomUUID()
-            : 'invoice-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+            : 'invoice-' +
+              Date.now() +
+              '-' +
+              Math.random()
+                .toString(16)
+                .slice(2);
+
       }
 
-      return new Promise((resolve, reject) => {
 
-        const iframeName =
-          'apiSaveFrame_' + Date.now();
+      return new Promise(
+        (resolve, reject) => {
 
-        const iframe =
-          document.createElement('iframe');
-
-        iframe.name = iframeName;
-        iframe.style.display = 'none';
-
-        document.body.appendChild(iframe);
+          const iframeName =
+            'apiSaveFrame_' +
+            Date.now();
 
 
-        const form =
-          document.createElement('form');
-
-        form.method = 'POST';
-        form.action = API_URL;
-        form.target = iframeName;
-
-        form.style.display = 'none';
+          const iframe =
+            document.createElement(
+              'iframe'
+            );
 
 
-        const actionInput =
-          document.createElement('input');
+          iframe.name =
+            iframeName;
 
-        actionInput.type = 'hidden';
-        actionInput.name = 'action';
-        actionInput.value = 'saveInvoice';
-
-        const passwordInput =
-          document.createElement('input');
-
-        passwordInput.type = 'hidden';
-        passwordInput.name = 'password';
-        passwordInput.value = getPassword();
+          iframe.style.display =
+            'none';
 
 
-        const invoiceInput =
-          document.createElement('input');
-
-        invoiceInput.type = 'hidden';
-        invoiceInput.name = 'invoice';
-        invoiceInput.value =
-          JSON.stringify(invoice);
+          document.body.appendChild(
+            iframe
+          );
 
 
-        form.appendChild(actionInput);
-        form.appendChild(passwordInput);
-        form.appendChild(invoiceInput);
+          const form =
+            document.createElement(
+              'form'
+            );
 
-        document.body.appendChild(form);
+
+          form.method =
+            'POST';
+
+          form.action =
+            API_URL;
+
+          form.target =
+            iframeName;
+
+          form.style.display =
+            'none';
 
 
-        let finished = false;
+          const actionInput =
+            document.createElement(
+              'input'
+            );
 
-        const finish = async () => {
 
-          if (finished) return;
-          finished = true;
+          actionInput.type =
+            'hidden';
 
-          form.remove();
-          iframe.remove();
+          actionInput.name =
+            'action';
 
-          try {
+          actionInput.value =
+            'saveInvoice';
 
-            // Controleer via GET of de factuur werkelijk
-            // in het Google Sheet-archief staat.
-            const saved =
-              await apiGet(
-                'invoice',
-                {
-                  invoiceId:
-                    invoice.invoiceId || ''
+
+          const passwordInput =
+            document.createElement(
+              'input'
+            );
+
+
+          passwordInput.type =
+            'hidden';
+
+          passwordInput.name =
+            'password';
+
+          passwordInput.value =
+            getPassword();
+
+
+          const invoiceInput =
+            document.createElement(
+              'input'
+            );
+
+
+          invoiceInput.type =
+            'hidden';
+
+          invoiceInput.name =
+            'invoice';
+
+          invoiceInput.value =
+            JSON.stringify(invoice);
+
+
+          form.appendChild(
+            actionInput
+          );
+
+          form.appendChild(
+            passwordInput
+          );
+
+          form.appendChild(
+            invoiceInput
+          );
+
+
+          document.body.appendChild(
+            form
+          );
+
+
+          let finished = false;
+
+
+          const finish =
+            async () => {
+
+              if (finished) return;
+
+              finished = true;
+
+
+              form.remove();
+
+              iframe.remove();
+
+
+              try {
+
+                const saved =
+                  await apiGet(
+                    'invoice',
+                    {
+                      invoiceId:
+                        invoice.invoiceId ||
+                        ''
+                    }
+                  );
+
+
+                if (!saved) {
+
+                  reject(
+                    new Error(
+                      'De factuur kon niet in het archief worden gevonden.'
+                    )
+                  );
+
+                  return;
+
                 }
-              );
-
-            if (!saved) {
-              reject(
-                new Error(
-                  'De factuur kon niet in het archief worden gevonden.'
-                )
-              );
-              return;
-            }
-
-            invoice.invoiceId = saved.invoiceId;
-
-            resolve({
-              saved: true,
-              invoiceId: saved.invoiceId,
-              message: 'Factuur is opgeslagen in het archief.'
-            });
-
-          } catch (error) {
-
-            reject(error);
-
-          }
-
-        };
 
 
-        iframe.addEventListener(
-          'load',
-          finish,
-          { once: true }
-        );
+                invoice.invoiceId =
+                  saved.invoiceId;
 
 
-        // Fallback voor browsers die de iframe-load
-        // niet betrouwbaar afhandelen.
-        setTimeout(finish, 2500);
+                resolve({
+
+                  saved: true,
+
+                  invoiceId:
+                    saved.invoiceId,
+
+                  message:
+                    'Factuur is opgeslagen in het archief.'
+
+                });
 
 
-        form.submit();
+              } catch (error) {
 
-      });
+                reject(error);
+
+              }
+
+            };
+
+
+          iframe.addEventListener(
+            'load',
+            finish,
+            { once: true }
+          );
+
+
+          setTimeout(
+            finish,
+            2500
+          );
+
+
+          form.submit();
+
+        }
+      );
 
     }
 
+
+    // ==========================================
+    // VELDEN
+    // ==========================================
+
     const fieldIds = [
+
       'invoiceNumber',
       'invoiceDate',
       'customerNumber',
@@ -647,441 +988,1350 @@
       'houseNumber',
       'streetName',
       'cityName'
+
     ];
 
-    // Vervang deze gegevens door jouw eigen vaste gegevens.
+
+    // ==========================================
+    // VASTE VOETTEKST
+    // ==========================================
+
     const footer = {
+
       payment:
         'NL Betalingsvoorwaarde: Binnen 14 dagen. Bij betaling s.v.p. klant en factuur nr. vermelden.',
+
       bank:
         'Rabobank Hardinxveld-Giessendam Rek.nr. NL12 RABO 03250.24529',
+
       registration:
         'KvK: Rotterdam nr.23034166 BTW nr. NL001140803B05',
+
       terms: [
+
         'Op al onze offertes, op alle opdrachten aan ons en op alle met ons gesloten overeenkomsten zijn de METAALUNIEVOORWAARDEN van toepassing,',
+
         'zoals deze luiden volgens de op de achterzijde afgedrukte tekst.',
+
         'De leveringsvoorwaarden worden u, indien gewenst, tevens kosteloos toegezonden.'
+
       ]
+
     };
 
+
+    // ==========================================
+    // BEDRAGEN
+    // ==========================================
+
     function money(number) {
-      return Number(number || 0).toLocaleString('nl-NL', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
+
+      return Number(
+        number || 0
+      ).toLocaleString(
+        'nl-NL',
+        {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }
+      );
+
     }
+
 
     function euro(number) {
-      return '€ ' + money(number);
+
+      return '€ ' +
+        money(number);
+
     }
+
+
+    // ==========================================
+    // HTML ESCAPEN
+    // ==========================================
 
     function escapeHtml(value) {
-      return String(value || '').replace(/[&<>"']/g, character => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[character]));
+
+      return String(
+        value || ''
+      ).replace(
+        /[&<>"']/g,
+        character => ({
+
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+
+        }[character])
+      );
+
     }
+
+
+    // ==========================================
+    // FACTUURREGEL TOEVOEGEN
+    // ==========================================
 
     function addItem(item = {}) {
-      const row = document.createElement('tr');
+
+      const row =
+        document.createElement(
+          'tr'
+        );
+
 
       row.innerHTML = `
+
         <td>
-          <input class="qty" type="number" min="0" step="1"
-            value="${item.quantity || 1}" oninput="updateTotals()">
+
+          <input
+            class="qty"
+            type="number"
+            min="0"
+            step="1"
+            value="${item.quantity || 1}"
+            oninput="updateTotals()"
+          >
+
         </td>
+
+
         <td>
-          <input class="description" value="${escapeHtml(item.description)}">
+
+          <input
+            class="description"
+            value="${escapeHtml(item.description)}"
+          >
+
         </td>
+
+
         <td>
-          <input class="price" type="number" min="0" step="0.01"
-            value="${item.price || ''}" oninput="updateTotals()">
+
+          <input
+            class="price"
+            type="number"
+            min="0"
+            step="0.01"
+            value="${item.price || ''}"
+            oninput="updateTotals()"
+          >
+
         </td>
-        <td>21,00%</td>
-        <td class="calculated line-excl">€ 0,00</td>
-        <td class="calculated line-incl">€ 0,00</td>
+
+
         <td>
-          <button class="remove" type="button" title="Regel verwijderen"
-            onclick="this.closest('tr').remove(); updateTotals()">×</button>
+          21,00%
         </td>
+
+
+        <td class="calculated line-excl">
+          € 0,00
+        </td>
+
+
+        <td class="calculated line-incl">
+          € 0,00
+        </td>
+
+
+        <td>
+
+          <button
+            class="remove"
+            type="button"
+            title="Regel verwijderen"
+            onclick="this.closest('tr').remove(); updateTotals()"
+          >
+            ×
+          </button>
+
+        </td>
+
       `;
 
-      document.getElementById('items').appendChild(row);
+
+      document
+        .getElementById('items')
+        .appendChild(row);
+
+
       updateTotals();
+
     }
+
+
+    // ==========================================
+    // FACTUURREGELS OPHALEN
+    // ==========================================
 
     function items() {
-      return [...document.querySelectorAll('#items tr')]
+
+      return [
+        ...document.querySelectorAll(
+          '#items tr'
+        )
+      ]
+
         .map(row => ({
-          quantity: Number(row.querySelector('.qty').value) || 0,
-          description: row.querySelector('.description').value.trim(),
-          price: Number(row.querySelector('.price').value) || 0
+
+          quantity:
+            Number(
+              row.querySelector(
+                '.qty'
+              ).value
+            ) || 0,
+
+          description:
+            row.querySelector(
+              '.description'
+            ).value.trim(),
+
+          price:
+            Number(
+              row.querySelector(
+                '.price'
+              ).value
+            ) || 0
+
         }))
-        .filter(item => item.description || item.price);
+
+        .filter(
+          item =>
+            item.description ||
+            item.price
+        );
+
     }
+
+
+    // ==========================================
+    // TOTALEN BEREKENEN
+    // ==========================================
 
     function updateTotals() {
-      document.querySelectorAll('#items tr').forEach(row => {
-        const quantity = Number(row.querySelector('.qty').value) || 0;
-        const price = Number(row.querySelector('.price').value) || 0;
-        const exclusive = quantity * price;
 
-        row.querySelector('.line-excl').textContent = euro(exclusive);
-        row.querySelector('.line-incl').textContent = euro(exclusive * 1.21);
-      });
+      document
+        .querySelectorAll(
+          '#items tr'
+        )
+        .forEach(row => {
 
-      const subtotal = items().reduce(
-        (sum, item) => sum + item.quantity * item.price,
-        0
-      );
+          const quantity =
+            Number(
+              row.querySelector(
+                '.qty'
+              ).value
+            ) || 0;
 
-      const vat = subtotal * 0.21;
 
-      document.getElementById('subtotal').textContent = euro(subtotal);
-      document.getElementById('vat').textContent = euro(vat);
-      document.getElementById('total').textContent = euro(subtotal + vat);
-    }
+          const price =
+            Number(
+              row.querySelector(
+                '.price'
+              ).value
+            ) || 0;
 
-    function invoiceData() {
-      const data = {
-        items: items(),
-        invoiceId: document.getElementById('invoiceId').value.trim()
-      };
 
-      fieldIds.forEach(id => {
-        data[id] = document.getElementById(id).value.trim();
-      });
+          const exclusive =
+            quantity *
+            price;
 
-      return data;
-    }
 
-    function applyInvoice(data) {
-      fieldIds.forEach(id => {
-        document.getElementById(id).value = data[id] || '';
-      });
+          row.querySelector(
+            '.line-excl'
+          ).textContent =
+            euro(exclusive);
 
-      document.getElementById('invoiceId').value = data.invoiceId || '';
 
-      document.getElementById('items').innerHTML = '';
+          row.querySelector(
+            '.line-incl'
+          ).textContent =
+            euro(
+              exclusive *
+              1.21
+            );
 
-      if (data.items && data.items.length) {
-        data.items.forEach(addItem);
-      } else {
-        addItem();
-      }
-
-      updateTotals();
-    }
-
-    function setStatus(message) {
-      document.getElementById('status').textContent = message;
-    }
-
-    function showError(error) {
-      if ((error.message || String(error)).includes('Niet geautoriseerd')) {
-        clearPassword();
-        document.getElementById('app').style.display = 'none';
-        document.getElementById('login').style.display = 'block';
-      }
-      setStatus('Er ging iets mis: ' + (error.message || error));
-    }
-
-    async function login() {
-      const password = document.getElementById('password').value;
-      const loginError = document.getElementById('loginError');
-
-      loginError.textContent = '';
-
-      if (!password) {
-        loginError.textContent = 'Vul een wachtwoord in.';
-        return;
-      }
-
-      try {
-        // Verstuur het wachtwoord alleen ter controle; sla het pas op na succes.
-        await apiGet('authenticate', { password });
-        localStorage.setItem(PASSWORD_STORAGE_KEY, password);
-        document.getElementById('password').value = '';
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        await loadInitialData();
-      } catch (error) {
-        clearPassword();
-        loginError.textContent = error.message || 'Inloggen mislukt.';
-      }
-    }
-
-    async function loadInitialData() {
-      try {
-        const data = await apiGet('initial');
-
-        applyInvoice({
-          invoiceId: '',
-          invoiceNumber: data.invoiceNumber,
-          invoiceDate: data.invoiceDate,
-          customerNumber: '',
-          companyName: '',
-          postcode: '',
-          houseNumber: '',
-          streetName: '',
-          cityName: '',
-          items: []
         });
 
-        showView('invoice');
-      } catch (error) {
-        showError(error);
-      }
+
+      const subtotal =
+        items().reduce(
+          (sum, item) =>
+            sum +
+            item.quantity *
+            item.price,
+          0
+        );
+
+
+      const vat =
+        subtotal *
+        0.21;
+
+
+      document.getElementById(
+        'subtotal'
+      ).textContent =
+        euro(subtotal);
+
+
+      document.getElementById(
+        'vat'
+      ).textContent =
+        euro(vat);
+
+
+      document.getElementById(
+        'total'
+      ).textContent =
+        euro(
+          subtotal +
+          vat
+        );
+
     }
 
-    async function loadInvoice(invoiceId) {
-      if (!invoiceId) {
-        showView('overview');
-        return;
+
+    // ==========================================
+    // FACTUURDATA
+    // ==========================================
+
+    function invoiceData() {
+
+      const data = {
+
+        items:
+          items(),
+
+        invoiceId:
+          document
+            .getElementById(
+              'invoiceId'
+            )
+            .value
+            .trim()
+
+      };
+
+
+      fieldIds.forEach(id => {
+
+        data[id] =
+          document
+            .getElementById(id)
+            .value
+            .trim();
+
+      });
+
+
+      return data;
+
+    }
+
+
+    // ==========================================
+    // FACTUUR LADEN IN FORMULIER
+    // ==========================================
+
+    function applyInvoice(data) {
+
+      fieldIds.forEach(id => {
+
+        document.getElementById(
+          id
+        ).value =
+          data[id] || '';
+
+      });
+
+
+      document.getElementById(
+        'invoiceId'
+      ).value =
+        data.invoiceId || '';
+
+
+      document.getElementById(
+        'items'
+      ).innerHTML =
+        '';
+
+
+      if (
+        data.items &&
+        data.items.length
+      ) {
+
+        data.items.forEach(
+          addItem
+        );
+
+      } else {
+
+        addItem();
+
       }
 
-      setStatus('Factuur wordt opgehaald…');
+
+      updateTotals();
+
+    }
+
+
+    // ==========================================
+    // STATUS
+    // ==========================================
+
+    function setStatus(message) {
+
+      document.getElementById(
+        'status'
+      ).textContent =
+        message;
+
+    }
+
+
+    // ==========================================
+    // FOUTMELDING
+    // ==========================================
+
+    function showError(error) {
+
+      if (
+        (
+          error.message ||
+          String(error)
+        ).includes(
+          'Niet geautoriseerd'
+        )
+      ) {
+
+        clearPassword();
+
+        document.getElementById(
+          'app'
+        ).style.display =
+          'none';
+
+        document.getElementById(
+          'login'
+        ).style.display =
+          'block';
+
+      }
+
+
+      setStatus(
+        'Er ging iets mis: ' +
+        (
+          error.message ||
+          error
+        )
+      );
+
+    }
+
+
+    // ==========================================
+    // INLOGGEN
+    // ==========================================
+
+    async function login() {
+
+      const password =
+        document.getElementById(
+          'password'
+        ).value;
+
+
+      const loginError =
+        document.getElementById(
+          'loginError'
+        );
+
+
+      loginError.textContent =
+        '';
+
+
+      if (!password) {
+
+        loginError.textContent =
+          'Vul een wachtwoord in.';
+
+        return;
+
+      }
+
 
       try {
-        const data = await apiGet('invoice', { invoiceId });
+
+        await apiGet(
+          'authenticate',
+          {
+            password
+          }
+        );
+
+
+        localStorage.setItem(
+          PASSWORD_STORAGE_KEY,
+          password
+        );
+
+
+        document.getElementById(
+          'password'
+        ).value =
+          '';
+
+
+        document.getElementById(
+          'login'
+        ).style.display =
+          'none';
+
+
+        document.getElementById(
+          'app'
+        ).style.display =
+          'block';
+
+
+        await loadInitialData();
+
+
+      } catch (error) {
+
+        clearPassword();
+
+        loginError.textContent =
+          error.message ||
+          'Inloggen mislukt.';
+
+      }
+
+    }
+
+
+    // ==========================================
+    // INITIËLE DATA
+    // ==========================================
+
+    async function loadInitialData() {
+
+      try {
+
+        const data =
+          await apiGet(
+            'initial'
+          );
+
+
+        applyInvoice({
+
+          invoiceId:
+            '',
+
+          invoiceNumber:
+            data.invoiceNumber,
+
+          invoiceDate:
+            data.invoiceDate,
+
+          customerNumber:
+            '',
+
+          companyName:
+            '',
+
+          postcode:
+            '',
+
+          houseNumber:
+            '',
+
+          streetName:
+            '',
+
+          cityName:
+            '',
+
+          items:
+            []
+
+        });
+
+
+        showView(
+          'invoice'
+        );
+
+
+      } catch (error) {
+
+        showError(error);
+
+      }
+
+    }
+
+
+    // ==========================================
+    // BESTAANDE FACTUUR LADEN
+    // ==========================================
+
+    async function loadInvoice(invoiceId) {
+
+      if (!invoiceId) {
+
+        showView(
+          'overview'
+        );
+
+        return;
+
+      }
+
+
+      setStatus(
+        'Factuur wordt opgehaald…'
+      );
+
+
+      try {
+
+        const data =
+          await apiGet(
+            'invoice',
+            {
+              invoiceId
+            }
+          );
+
 
         if (!data) {
-          setStatus('Factuur niet gevonden.');
+
+          setStatus(
+            'Factuur niet gevonden.'
+          );
+
           return;
+
         }
 
-        applyInvoice(data);
-        showView('invoice');
-        setStatus('Factuur geopend. Je kunt het factuurnummer nu aanpassen.');
+
+        applyInvoice(
+          data
+        );
+
+
+        showView(
+          'invoice'
+        );
+
+
+        setStatus(
+          'Factuur geopend. Je kunt het factuurnummer nu aanpassen.'
+        );
+
+
       } catch (error) {
+
         showError(error);
+
       }
+
     }
+
+
+    // ==========================================
+    // FACTUUR VERWIJDEREN
+    // ==========================================
 
     function apiDeleteInvoice(invoiceId) {
+
       if (!invoiceId) {
-        return Promise.reject(new Error('Geen factuur-ID opgegeven.'));
+
+        return Promise.reject(
+          new Error(
+            'Geen factuur-ID opgegeven.'
+          )
+        );
+
       }
 
-      return new Promise((resolve, reject) => {
-        const iframeName = 'apiDeleteFrame_' + Date.now();
 
-        const iframe = document.createElement('iframe');
-        iframe.name = iframeName;
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
+      return new Promise(
+        (resolve, reject) => {
 
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = API_URL;
-        form.target = iframeName;
-        form.style.display = 'none';
+          const iframeName =
+            'apiDeleteFrame_' +
+            Date.now();
 
-        const actionInput = document.createElement('input');
-        actionInput.type = 'hidden';
-        actionInput.name = 'action';
-        actionInput.value = 'deleteInvoice';
 
-        const passwordInput = document.createElement('input');
-        passwordInput.type = 'hidden';
-        passwordInput.name = 'password';
-        passwordInput.value = getPassword();
+          const iframe =
+            document.createElement(
+              'iframe'
+            );
 
-        const invoiceIdInput = document.createElement('input');
-        invoiceIdInput.type = 'hidden';
-        invoiceIdInput.name = 'invoiceId';
-        invoiceIdInput.value = invoiceId;
 
-        form.appendChild(actionInput);
-        form.appendChild(passwordInput);
-        form.appendChild(invoiceIdInput);
-        document.body.appendChild(form);
+          iframe.name =
+            iframeName;
 
-        let finished = false;
+          iframe.style.display =
+            'none';
 
-        const finish = async () => {
-          if (finished) return;
-          finished = true;
 
-          form.remove();
-          iframe.remove();
+          document.body.appendChild(
+            iframe
+          );
 
-          try {
-            const remaining = await apiGet('invoice', { invoiceId });
 
-            if (remaining) {
-              reject(new Error('De factuur kon niet worden verwijderd.'));
-              return;
+          const form =
+            document.createElement(
+              'form'
+            );
+
+
+          form.method =
+            'POST';
+
+          form.action =
+            API_URL;
+
+          form.target =
+            iframeName;
+
+          form.style.display =
+            'none';
+
+
+          const actionInput =
+            document.createElement(
+              'input'
+            );
+
+
+          actionInput.type =
+            'hidden';
+
+          actionInput.name =
+            'action';
+
+          actionInput.value =
+            'deleteInvoice';
+
+
+          const passwordInput =
+            document.createElement(
+              'input'
+            );
+
+
+          passwordInput.type =
+            'hidden';
+
+          passwordInput.name =
+            'password';
+
+          passwordInput.value =
+            getPassword();
+
+
+          const invoiceIdInput =
+            document.createElement(
+              'input'
+            );
+
+
+          invoiceIdInput.type =
+            'hidden';
+
+          invoiceIdInput.name =
+            'invoiceId';
+
+          invoiceIdInput.value =
+            invoiceId;
+
+
+          form.appendChild(
+            actionInput
+          );
+
+          form.appendChild(
+            passwordInput
+          );
+
+          form.appendChild(
+            invoiceIdInput
+          );
+
+
+          document.body.appendChild(
+            form
+          );
+
+
+          let finished = false;
+
+
+          const finish =
+            async () => {
+
+              if (finished) return;
+
+              finished = true;
+
+
+              form.remove();
+
+              iframe.remove();
+
+
+              try {
+
+                const remaining =
+                  await apiGet(
+                    'invoice',
+                    {
+                      invoiceId
+                    }
+                  );
+
+
+                if (remaining) {
+
+                  reject(
+                    new Error(
+                      'De factuur kon niet worden verwijderd.'
+                    )
+                  );
+
+                  return;
+
+                }
+
+
+                resolve({
+
+                  deleted:
+                    true,
+
+                  invoiceId:
+                    invoiceId,
+
+                  message:
+                    'Factuur is verwijderd.'
+
+                });
+
+
+              } catch (error) {
+
+                reject(error);
+
+              }
+
+            };
+
+
+          iframe.addEventListener(
+            'load',
+            finish,
+            {
+              once: true
             }
+          );
 
-            resolve({
-              deleted: true,
-              invoiceId: invoiceId,
-              message: 'Factuur is verwijderd.'
-            });
-          } catch (error) {
-            reject(error);
-          }
-        };
 
-        iframe.addEventListener('load', finish, { once: true });
-        setTimeout(finish, 2500);
+          setTimeout(
+            finish,
+            2500
+          );
 
-        form.submit();
-      });
+
+          form.submit();
+
+        }
+      );
+
     }
 
-    async function deleteInvoice(invoiceId, invoiceNumber) {
+
+    async function deleteInvoice(
+      invoiceId,
+      invoiceNumber
+    ) {
+
       if (!invoiceId) {
-        alert('Deze factuur heeft geen uniek ID en kan niet worden verwijderd.');
+
+        alert(
+          'Deze factuur heeft geen uniek ID en kan niet worden verwijderd.'
+        );
+
         return;
+
       }
 
-      const confirmed = confirm(
-        'Weet je zeker dat je factuur ' +
-        (invoiceNumber || '') +
-        ' wilt verwijderen?\n\nDeze actie kan niet ongedaan worden gemaakt.'
-      );
+
+      const confirmed =
+        confirm(
+          'Weet je zeker dat je factuur ' +
+          (invoiceNumber || '') +
+          ' wilt verwijderen?\n\n' +
+          'Deze actie kan niet ongedaan worden.'
+        );
+
 
       if (!confirmed) return;
 
-      setStatus('Factuur wordt verwijderd…');
+
+      setStatus(
+        'Factuur wordt verwijderd…'
+      );
+
 
       try {
-        const result = await apiDeleteInvoice(invoiceId);
 
-        if (!result || !result.deleted) {
-          throw new Error(
-            result?.message || 'De factuur kon niet worden verwijderd.'
+        const result =
+          await apiDeleteInvoice(
+            invoiceId
           );
+
+
+        if (
+          !result ||
+          !result.deleted
+        ) {
+
+          throw new Error(
+            result?.message ||
+            'De factuur kon niet worden verwijderd.'
+          );
+
         }
 
-        setStatus('Factuur verwijderd.');
+
+        setStatus(
+          'Factuur verwijderd.'
+        );
+
+
         await loadInvoiceList();
+
+
       } catch (error) {
+
         showError(error);
+
       }
+
     }
+
+
+    // ==========================================
+    // WEERGAVE WISSELEN
+    // ==========================================
 
     function showView(view) {
-      const overview = document.getElementById('overviewView');
-      const invoice = document.getElementById('invoiceView');
-      const navOverview = document.getElementById('navOverview');
-      const navNew = document.getElementById('navNew');
 
-      if (view === 'overview') {
-        overview.classList.add('active');
-        invoice.classList.remove('active');
-        navOverview.classList.add('active');
-        navNew.classList.remove('active');
+      const overview =
+        document.getElementById(
+          'overviewView'
+        );
+
+
+      const invoice =
+        document.getElementById(
+          'invoiceView'
+        );
+
+
+      const navOverview =
+        document.getElementById(
+          'navOverview'
+        );
+
+
+      const navNew =
+        document.getElementById(
+          'navNew'
+        );
+
+
+      if (
+        view === 'overview'
+      ) {
+
+        overview.classList.add(
+          'active'
+        );
+
+
+        invoice.classList.remove(
+          'active'
+        );
+
+
+        navOverview.classList.add(
+          'active'
+        );
+
+
+        navNew.classList.remove(
+          'active'
+        );
+
+
         loadInvoiceList();
+
+
       } else {
-        overview.classList.remove('active');
-        invoice.classList.add('active');
-        navOverview.classList.remove('active');
-        navNew.classList.add('active');
+
+        overview.classList.remove(
+          'active'
+        );
+
+
+        invoice.classList.add(
+          'active'
+        );
+
+
+        navOverview.classList.remove(
+          'active'
+        );
+
+
+        navNew.classList.add(
+          'active'
+        );
+
       }
+
     }
+
+
+    // ==========================================
+    // NIEUWE FACTUUR
+    // ==========================================
 
     async function newInvoice() {
+
       try {
-        setStatus('Nieuw factuurnummer wordt opgehaald…');
-        const data = await apiGet('initial');
+
+        setStatus(
+          'Nieuw factuurnummer wordt opgehaald…'
+        );
+
+
+        const data =
+          await apiGet(
+            'initial'
+          );
+
+
         applyInvoice({
-          invoiceId: '',
-          invoiceNumber: data.invoiceNumber,
-          invoiceDate: data.invoiceDate,
-          customerNumber: '',
-          companyName: '',
-          postcode: '',
-          houseNumber: '',
-          streetName: '',
-          cityName: '',
-          items: []
+
+          invoiceId:
+            '',
+
+          invoiceNumber:
+            data.invoiceNumber,
+
+          invoiceDate:
+            data.invoiceDate,
+
+          customerNumber:
+            '',
+
+          companyName:
+            '',
+
+          postcode:
+            '',
+
+          houseNumber:
+            '',
+
+          streetName:
+            '',
+
+          cityName:
+            '',
+
+          items:
+            []
+
         });
-        showView('invoice');
-        setStatus('');
+
+
+        showView(
+          'invoice'
+        );
+
+
+        setStatus(
+          ''
+        );
+
+
       } catch (error) {
+
         showError(error);
+
       }
+
     }
+
+
+    // ==========================================
+    // FACTURENOVERZICHT
+    // ==========================================
 
     async function loadInvoiceList() {
-      const container = document.getElementById('invoiceList');
-      container.textContent = 'Facturen worden geladen…';
+
+      const container =
+        document.getElementById(
+          'invoiceList'
+        );
+
+
+      container.textContent =
+        'Facturen worden geladen…';
+
 
       try {
-        const invoices = await apiGet('invoices');
 
-        if (!invoices || !invoices.length) {
-          container.innerHTML = '<div class="overview-empty">Er zijn nog geen facturen opgeslagen.</div>';
+        const invoices =
+          await apiGet(
+            'invoices'
+          );
+
+
+        if (
+          !invoices ||
+          !invoices.length
+        ) {
+
+          container.innerHTML =
+            '<div class="overview-empty">' +
+            'Er zijn nog geen facturen opgeslagen.' +
+            '</div>';
+
           return;
+
         }
 
-        const table = document.createElement('table');
-        table.className = 'overview-table';
+
+        const table =
+          document.createElement(
+            'table'
+          );
+
+
+        table.className =
+          'overview-table';
+
 
         table.innerHTML = `
+
           <thead>
+
             <tr>
-              <th>Factuurnummer</th>
-              <th>Factuurdatum</th>
-              <th>Klantnummer</th>
-              <th>Bedrijfsnaam</th>
-              <th>Bedrag incl.</th>
-              <th>Actie</th>
+
+              <th>
+                Factuurnummer
+              </th>
+
+              <th>
+                Factuurdatum
+              </th>
+
+              <th>
+                Klantnummer
+              </th>
+
+              <th>
+                Bedrijfsnaam
+              </th>
+
+              <th>
+                Bedrag incl.
+              </th>
+
+              <th>
+                Actie
+              </th>
+
             </tr>
+
           </thead>
+
           <tbody></tbody>
+
         `;
 
-        const tbody = table.querySelector('tbody');
 
-        invoices.forEach(invoice => {
-          const row = document.createElement('tr');
+        const tbody =
+          table.querySelector(
+            'tbody'
+          );
 
-          const dateText = invoice.invoiceDate
-            ? new Date(invoice.invoiceDate + 'T12:00:00').toLocaleDateString('nl-NL')
-            : '';
 
-          row.innerHTML = `
-            <td>${escapeHtml(invoice.invoiceNumber)}</td>
-            <td>${escapeHtml(dateText)}</td>
-            <td>${escapeHtml(invoice.customerNumber)}</td>
-            <td>${escapeHtml(invoice.companyName)}</td>
-            <td>${escapeHtml(euro(invoice.total))}</td>
-            <td class="actions-cell">
-              <button class="open-button" type="button">Bekijken / bewerken</button>
-              <button class="delete-button" type="button">Verwijderen</button>
-            </td>
-          `;
+        invoices.forEach(
+          invoice => {
 
-          row.querySelector('.open-button').addEventListener('click', () => {
-            loadInvoice(invoice.invoiceId);
-          });
+            const row =
+              document.createElement(
+                'tr'
+              );
 
-          row.querySelector('.delete-button').addEventListener('click', () => {
-            deleteInvoice(invoice.invoiceId, invoice.invoiceNumber);
-          });
 
-          tbody.appendChild(row);
-        });
+            const dateText =
+              invoice.invoiceDate
+                ? new Date(
+                    invoice.invoiceDate +
+                    'T12:00:00'
+                  ).toLocaleDateString(
+                    'nl-NL'
+                  )
+                : '';
 
-        container.innerHTML = '';
-        container.appendChild(table);
+
+            row.innerHTML = `
+
+              <td>
+                ${escapeHtml(
+                  invoice.invoiceNumber
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  dateText
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  invoice.customerNumber
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  invoice.companyName
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  euro(
+                    invoice.total
+                  )
+                )}
+              </td>
+
+              <td class="actions-cell">
+
+                <button
+                  class="open-button"
+                  type="button"
+                >
+                  Bekijken / bewerken
+                </button>
+
+                <button
+                  class="delete-button"
+                  type="button"
+                >
+                  Verwijderen
+                </button>
+
+              </td>
+
+            `;
+
+
+            row
+              .querySelector(
+                '.open-button'
+              )
+              .addEventListener(
+                'click',
+                () => {
+
+                  loadInvoice(
+                    invoice.invoiceId
+                  );
+
+                }
+              );
+
+
+            row
+              .querySelector(
+                '.delete-button'
+              )
+              .addEventListener(
+                'click',
+                () => {
+
+                  deleteInvoice(
+                    invoice.invoiceId,
+                    invoice.invoiceNumber
+                  );
+
+                }
+              );
+
+
+            tbody.appendChild(
+              row
+            );
+
+          }
+        );
+
+
+        container.innerHTML =
+          '';
+
+
+        container.appendChild(
+          table
+        );
+
 
       } catch (error) {
-        container.textContent = 'Er ging iets mis bij het ophalen van de facturen.';
+
+        container.textContent =
+          'Er ging iets mis bij het ophalen van de facturen.';
+
         showError(error);
+
       }
+
     }
+
+
+    // ==========================================
+    // PDF DOWNLOADEN
+    // ==========================================
 
     async function downloadPdf() {
 
-      const data = invoiceData();
+      const data =
+        invoiceData();
+
 
       if (!data.companyName) {
 
@@ -1090,7 +2340,9 @@
         );
 
         return;
+
       }
+
 
       if (!data.invoiceDate) {
 
@@ -1099,32 +2351,61 @@
         );
 
         return;
+
       }
+
 
       setStatus(
         'Factuur wordt opgeslagen…'
       );
 
+
       try {
 
         const result =
-          await apiSaveInvoice(data);
-
-        if (!result || !result.saved) {
-          throw new Error(
-            result?.message || 'De factuur kon niet worden opgeslagen.'
+          await apiSaveInvoice(
+            data
           );
+
+
+        if (
+          !result ||
+          !result.saved
+        ) {
+
+          throw new Error(
+            result?.message ||
+            'De factuur kon niet worden opgeslagen.'
+          );
+
         }
 
-        // De server geeft bij een nieuwe factuur het unieke ID terug.
-        data.invoiceId = result.invoiceId;
-        document.getElementById('invoiceId').value = result.invoiceId;
 
-        createPdf(data);
+        data.invoiceId =
+          result.invoiceId;
+
+
+        document.getElementById(
+          'invoiceId'
+        ).value =
+          result.invoiceId;
+
+
+        const doc =
+          createPdfDocument(
+            data
+          );
+
+
+        doc.save(
+          `Factuur ${data.invoiceNumber}.pdf`
+        );
+
 
         setStatus(
           'PDF gedownload en factuur opgeslagen.'
         );
+
 
       } catch (error) {
 
@@ -1134,170 +2415,862 @@
 
     }
 
-    function createPdf(data) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({
-        unit: 'mm',
-        format: 'a4'
-      });
 
-      const green = [211, 221, 207];
-      const left = 18;
-      const right = 202;
+    // ==========================================
+    // FACTUUR PRINTEN
+    // ==========================================
 
-      const date = new Date(data.invoiceDate + 'T12:00:00');
-      const paymentDate = new Date(date);
-      paymentDate.setDate(paymentDate.getDate() + 14);
+    async function printInvoice() {
 
-      const dateText = date.toLocaleDateString('nl-NL');
-      const paymentText = paymentDate.toLocaleDateString('nl-NL');
+      const data =
+        invoiceData();
 
-      const subtotal = data.items.reduce(
-        (sum, item) => sum + item.quantity * item.price,
+
+      if (!data.companyName) {
+
+        alert(
+          'Vul minimaal de bedrijfsnaam in.'
+        );
+
+        return;
+
+      }
+
+
+      if (!data.invoiceDate) {
+
+        alert(
+          'Vul een factuurdatum in.'
+        );
+
+        return;
+
+      }
+
+
+      setStatus(
+        'Factuur wordt opgeslagen…'
+      );
+
+
+      try {
+
+        // Eerst opslaan
+        const result =
+          await apiSaveInvoice(
+            data
+          );
+
+
+        if (
+          !result ||
+          !result.saved
+        ) {
+
+          throw new Error(
+            result?.message ||
+            'De factuur kon niet worden opgeslagen.'
+          );
+
+        }
+
+
+        data.invoiceId =
+          result.invoiceId;
+
+
+        document.getElementById(
+          'invoiceId'
+        ).value =
+          result.invoiceId;
+
+
+        // PDF-document maken
+        const doc =
+          createPdfDocument(
+            data
+          );
+
+
+        // PDF als Blob maken
+        const pdfBlob =
+          doc.output(
+            'blob'
+          );
+
+
+        const pdfUrl =
+          URL.createObjectURL(
+            pdfBlob
+          );
+
+
+        // Nieuw venster openen
+        const printWindow =
+          window.open(
+            pdfUrl,
+            '_blank'
+          );
+
+
+        if (!printWindow) {
+
+          URL.revokeObjectURL(
+            pdfUrl
+          );
+
+
+          throw new Error(
+            'Het printvenster kon niet worden geopend. Controleer of pop-ups zijn toegestaan.'
+          );
+
+        }
+
+
+        setStatus(
+          'Printvenster wordt geopend…'
+        );
+
+
+        // Browser even tijd geven om de PDF te laden
+        setTimeout(
+          () => {
+
+            try {
+
+              printWindow.focus();
+
+              printWindow.print();
+
+            } catch (error) {
+
+              // PDF blijft geopend zodat
+              // handmatig afdrukken mogelijk is.
+
+            }
+
+          },
+          1500
+        );
+
+
+        // Tijdelijke URL later opruimen
+        setTimeout(
+          () => {
+
+            URL.revokeObjectURL(
+              pdfUrl
+            );
+
+          },
+          60000
+        );
+
+
+        setStatus(
+          'Factuur is opgeslagen en het printvenster is geopend.'
+        );
+
+
+      } catch (error) {
+
+        showError(error);
+
+      }
+
+    }
+
+
+    // ==========================================
+    // PDF DOCUMENT MAKEN
+    // ==========================================
+
+    function createPdfDocument(data) {
+
+      const { jsPDF } =
+        window.jspdf;
+
+
+      const doc =
+        new jsPDF({
+
+          unit: 'mm',
+
+          format: 'a4'
+
+        });
+
+
+      const green =
+        [211, 221, 207];
+
+
+      const left =
+        18;
+
+
+      const right =
+        202;
+
+
+      // ==========================================
+      // DATUM
+      // ==========================================
+
+      const date =
+        new Date(
+          data.invoiceDate +
+          'T12:00:00'
+        );
+
+
+      const paymentDate =
+        new Date(
+          date
+        );
+
+
+      paymentDate.setDate(
+        paymentDate.getDate() +
+        14
+      );
+
+
+      const dateText =
+        date.toLocaleDateString(
+          'nl-NL'
+        );
+
+
+      const paymentText =
+        paymentDate.toLocaleDateString(
+          'nl-NL'
+        );
+
+
+      // ==========================================
+      // TOTALEN
+      // ==========================================
+
+      const subtotal =
+        data.items.reduce(
+          (sum, item) =>
+            sum +
+            item.quantity *
+            item.price,
+          0
+        );
+
+
+      const vat =
+        subtotal *
+        0.21;
+
+
+      const total =
+        subtotal +
+        vat;
+
+
+      // ==========================================
+      // ADRES
+      // ==========================================
+
+      const address = [
+
+        data.companyName,
+
+        `${data.streetName} ${data.houseNumber}`.trim(),
+
+        `${data.postcode} ${data.cityName}`.trim()
+
+      ].filter(Boolean);
+
+
+      // ==========================================
+      // KOP
+      // ==========================================
+
+      doc.setTextColor(
+        0,
+        0,
         0
       );
 
-      const vat = subtotal * 0.21;
-      const total = subtotal + vat;
 
-      const address = [
-        data.companyName,
-        `${data.streetName} ${data.houseNumber}`.trim(),
-        `${data.postcode} ${data.cityName}`.trim()
-      ].filter(Boolean);
+      doc.setFont(
+        'helvetica',
+        'bold'
+      );
 
-      // Kop
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.text(address, left, 43);
 
-      doc.setFontSize(9);
+      doc.setFontSize(
+        8
+      );
+
+
+      doc.text(
+        address,
+        left,
+        43
+      );
+
+
+      doc.setFontSize(
+        9
+      );
+
+
       doc.text(
         `FACTUUR ${data.invoiceNumber} van ${dateText}`,
         left,
         74
       );
-      doc.text('Pagina : 1', 157, 74);
 
-      doc.setFontSize(8);
-      doc.text(`Klantnummer ${data.customerNumber || ''}`, left, 80);
 
-      // Factuurregels
-      const columns = [18, 42, 108, 132, 155, 178, 202];
-      const top = 86;
-      const headerBottom = 91;
-      const tableBottom = 202;
+      doc.text(
+        'Pagina : 1',
+        157,
+        74
+      );
 
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.25);
-      doc.rect(left, top, right - left, tableBottom - top);
 
-      doc.setFillColor(...green);
-      doc.rect(left, top, right - left, 5, 'F');
+      doc.setFontSize(
+        8
+      );
 
-      columns.slice(1, -1).forEach(x => {
-        doc.line(x, top, x, tableBottom);
-      });
 
-      doc.line(left, headerBottom, right, headerBottom);
+      doc.text(
+        `Klantnummer ${data.customerNumber || ''}`,
+        left,
+        80
+      );
+
+
+      // ==========================================
+      // FACTUURREGELS
+      // ==========================================
+
+      const columns = [
+        18,
+        42,
+        108,
+        132,
+        155,
+        178,
+        202
+      ];
+
+
+      const top =
+        86;
+
+
+      const headerBottom =
+        91;
+
+
+      const tableBottom =
+        202;
+
+
+      doc.setDrawColor(
+        0,
+        0,
+        0
+      );
+
+
+      doc.setLineWidth(
+        0.25
+      );
+
+
+      doc.rect(
+        left,
+        top,
+        right - left,
+        tableBottom - top
+      );
+
+
+      doc.setFillColor(
+        ...green
+      );
+
+
+      doc.rect(
+        left,
+        top,
+        right - left,
+        5,
+        'F'
+      );
+
+
+      columns
+        .slice(1, -1)
+        .forEach(
+          x => {
+
+            doc.line(
+              x,
+              top,
+              x,
+              tableBottom
+            );
+
+          }
+        );
+
+
+      doc.line(
+        left,
+        headerBottom,
+        right,
+        headerBottom
+      );
+
 
       const headers = [
+
         'Aantal',
         'Omschrijving',
         'Stukprijs',
         '% BTW',
         'Prijs excl.',
         'Prijs incl.'
+
       ];
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
 
-      headers.forEach((header, index) => {
-        doc.text(
-          header,
-          (columns[index] + columns[index + 1]) / 2,
-          89,
-          { align: 'center' }
+      doc.setFont(
+        'helvetica',
+        'bold'
+      );
+
+
+      doc.setFontSize(
+        7
+      );
+
+
+      headers.forEach(
+        (header, index) => {
+
+          doc.text(
+
+            header,
+
+            (
+              columns[index] +
+              columns[index + 1]
+            ) / 2,
+
+            89,
+
+            {
+              align:
+                'center'
+            }
+
+          );
+
+        }
+      );
+
+
+      doc.setFont(
+        'helvetica',
+        'normal'
+      );
+
+
+      // ==========================================
+      // REGELS
+      // ==========================================
+
+      data.items
+        .slice(0, 16)
+        .forEach(
+          (item, index) => {
+
+            const y =
+              95 +
+              index * 5;
+
+
+            const lineTotal =
+              item.quantity *
+              item.price;
+
+
+            doc.text(
+              String(
+                item.quantity
+              ),
+              32,
+              y,
+              {
+                align:
+                  'right'
+              }
+            );
+
+
+            doc.text(
+              item.description,
+              43,
+              y
+            );
+
+
+            doc.text(
+              money(
+                item.price
+              ),
+              130,
+              y,
+              {
+                align:
+                  'right'
+              }
+            );
+
+
+            doc.text(
+              '21,00%',
+              153,
+              y,
+              {
+                align:
+                  'right'
+              }
+            );
+
+
+            doc.text(
+              money(
+                lineTotal
+              ),
+              176,
+              y,
+              {
+                align:
+                  'right'
+              }
+            );
+
+
+            doc.text(
+              money(
+                lineTotal *
+                1.21
+              ),
+              200,
+              y,
+              {
+                align:
+                  'right'
+              }
+            );
+
+          }
         );
-      });
 
-      doc.setFont('helvetica', 'normal');
 
-      data.items.slice(0, 16).forEach((item, index) => {
-        const y = 95 + index * 5;
-        const lineTotal = item.quantity * item.price;
+      // ==========================================
+      // TOTALEN
+      // ==========================================
 
-        doc.text(String(item.quantity), 32, y, { align: 'right' });
-        doc.text(item.description, 43, y);
-        doc.text(money(item.price), 130, y, { align: 'right' });
-        doc.text('21,00%', 153, y, { align: 'right' });
-        doc.text(money(lineTotal), 176, y, { align: 'right' });
-        doc.text(money(lineTotal * 1.21), 200, y, { align: 'right' });
-      });
+      const totalsTop =
+        207;
 
-      // Totalen
-      const totalsTop = 207;
 
-      doc.setFillColor(...green);
-      doc.rect(left, totalsTop, right - left, 5, 'F');
-      doc.rect(left, totalsTop, right - left, 10);
+      doc.setFillColor(
+        ...green
+      );
 
-      [64, 88, 112, 134, 155].forEach(x => {
-        doc.line(x, totalsTop, x, totalsTop + 10);
-      });
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
+      doc.rect(
+        left,
+        totalsTop,
+        right - left,
+        5,
+        'F'
+      );
 
-      doc.text('Bedrag excl.', 19, 210);
-      doc.text('BTW %', 65, 210);
-      doc.text('Bedrag BTW', 89, 210);
-      doc.text('Bedrag incl.', 156, 210);
 
-      doc.setFontSize(8);
-      doc.text(money(subtotal), 63, 216, { align: 'right' });
-      doc.text('21,00%', 87, 216, { align: 'right' });
-      doc.text(money(vat), 111, 216, { align: 'right' });
-      doc.text(money(total), 201, 216, { align: 'right' });
+      doc.rect(
+        left,
+        totalsTop,
+        right - left,
+        10
+      );
 
-      // Betaalblok
-      const paymentTop = 222;
 
-      doc.rect(88, paymentTop, 114, 6);
-      doc.line(178, paymentTop, 178, paymentTop + 6);
+      [
+        64,
+        88,
+        112,
+        134,
+        155
+      ].forEach(
+        x => {
 
-      doc.setFontSize(7);
-      doc.text(`Te betalen voor ${paymentText} :`, 90, 226);
-      doc.text(money(total), 201, 226, { align: 'right' });
+          doc.line(
+            x,
+            totalsTop,
+            x,
+            totalsTop + 10
+          );
 
-      // Footer
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.4);
+        }
+      );
 
-      doc.text(footer.payment, left, 241);
-      doc.text(footer.bank, left, 248);
-      doc.text(footer.registration, left, 255);
-      doc.text(footer.terms, left, 263);
 
-      doc.save(`Factuur ${data.invoiceNumber}.pdf`);
+      doc.setFont(
+        'helvetica',
+        'bold'
+      );
+
+
+      doc.setFontSize(
+        7
+      );
+
+
+      doc.text(
+        'Bedrag excl.',
+        19,
+        210
+      );
+
+
+      doc.text(
+        'BTW %',
+        65,
+        210
+      );
+
+
+      doc.text(
+        'Bedrag BTW',
+        89,
+        210
+      );
+
+
+      doc.text(
+        'Bedrag incl.',
+        156,
+        210
+      );
+
+
+      doc.setFontSize(
+        8
+      );
+
+
+      doc.text(
+        money(subtotal),
+        63,
+        216,
+        {
+          align:
+            'right'
+        }
+      );
+
+
+      doc.text(
+        '21,00%',
+        87,
+        216,
+        {
+          align:
+            'right'
+        }
+      );
+
+
+      doc.text(
+        money(vat),
+        111,
+        216,
+        {
+          align:
+            'right'
+        }
+      );
+
+
+      doc.text(
+        money(total),
+        201,
+        216,
+        {
+          align:
+            'right'
+        }
+      );
+
+
+      // ==========================================
+      // BETAALBLOK
+      // ==========================================
+
+      const paymentTop =
+        222;
+
+
+      doc.rect(
+        88,
+        paymentTop,
+        114,
+        6
+      );
+
+
+      doc.line(
+        178,
+        paymentTop,
+        178,
+        paymentTop + 6
+      );
+
+
+      doc.setFontSize(
+        7
+      );
+
+
+      doc.text(
+        `Te betalen voor ${paymentText} :`,
+        90,
+        226
+      );
+
+
+      doc.text(
+        money(total),
+        201,
+        226,
+        {
+          align:
+            'right'
+        }
+      );
+
+
+      // ==========================================
+      // FOOTER
+      // ==========================================
+
+      doc.setFont(
+        'helvetica',
+        'normal'
+      );
+
+
+      doc.setFontSize(
+        6.4
+      );
+
+
+      doc.text(
+        footer.payment,
+        left,
+        241
+      );
+
+
+      doc.text(
+        footer.bank,
+        left,
+        248
+      );
+
+
+      doc.text(
+        footer.registration,
+        left,
+        255
+      );
+
+
+      doc.text(
+        footer.terms,
+        left,
+        263
+      );
+
+
+      // Geef het PDF-document terug
+      // zodat het zowel kan worden gedownload
+      // als geprint.
+
+      return doc;
+
     }
 
+
+    // ==========================================
+    // START
+    // ==========================================
+
     (async function init() {
-      const savedPassword = getPassword();
 
-      document.getElementById('password').addEventListener('keydown', event => {
-        if (event.key === 'Enter') login();
-      });
+      const savedPassword =
+        getPassword();
 
-      if (!savedPassword) return;
 
-      document.getElementById('login').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
+      document
+        .getElementById(
+          'password'
+        )
+        .addEventListener(
+          'keydown',
+          event => {
+
+            if (
+              event.key ===
+              'Enter'
+            ) {
+
+              login();
+
+            }
+
+          }
+        );
+
+
+      if (!savedPassword) {
+
+        return;
+
+      }
+
+
+      document.getElementById(
+        'login'
+      ).style.display =
+        'none';
+
+
+      document.getElementById(
+        'app'
+      ).style.display =
+        'block';
+
+
       await loadInitialData();
 
     })();
+
   </script>
+
 </body>
 </html>
